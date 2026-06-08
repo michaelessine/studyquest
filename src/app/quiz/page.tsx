@@ -14,7 +14,12 @@ export default async function QuizPage() {
     }),
     Promise.all(SUBJECTS.map(async s => {
       const studied = await prisma.skillNode.count({ where: { subject: s, masteryLevel: { gt: 0 } } })
-      return { subject: s, studied }
+      // 5 unlocked topics without templates yet — candidates for batch pre-gen
+      const batchTopics = await prisma.skillNode.findMany({
+        where: { subject: s, status: { in: ['unlocked', 'in_progress'] }, quizTemplates: { none: {} } },
+        select: { id: true, name: true }, take: 5,
+      })
+      return { subject: s, studied, batchTopics: batchTopics.map(t => ({ skillNodeId: t.id, topicName: t.name })) }
     })),
   ])
 

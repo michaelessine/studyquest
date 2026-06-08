@@ -55,14 +55,15 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
     } catch {}
   }
 
-  async function startQuiz() {
+  async function startQuiz(forceNew = false) {
     setPhase('loading')
     try {
       const res  = await fetch('/api/quiz/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skillNodeId, topicName, subject, quizType: 'practice' }),
+        body: JSON.stringify({ skillNodeId, topicName, subject, quizType: 'practice', forceNew }),
       })
       const data = await res.json()
+      if (res.status === 429) { showToast('info', data.error ?? 'Rate limited'); setPhase('history'); return }
       if (!data.quiz) throw new Error('Generation failed')
       setQuiz(data.quiz)
       setDifficulty(data.difficulty ?? null)
@@ -111,12 +112,18 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
   if (phase === 'history') {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-gray-500">Quiz History</span>
-          <button onClick={startQuiz}
-            className="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors">
-            Practice
-          </button>
+          <div className="flex gap-1.5">
+            <button onClick={() => startQuiz(false)}
+              className="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors">
+              Practice
+            </button>
+            <button onClick={() => startQuiz(true)} title="Generate fresh harder questions (uses an API call)"
+              className="text-xs px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg transition-colors">
+              Harder
+            </button>
+          </div>
         </div>
         {history.length === 0 ? (
           <p className="text-xs text-gray-600">No quizzes taken yet for this topic.</p>

@@ -23,7 +23,7 @@ Return ONLY JSON: { "score": number, "verdict": "strong"|"good"|"fair"|"weak", "
 
   let scoreResult: DebateScore
   try {
-    scoreResult = await claudeJSON<DebateScore>({ system, user: 'Score this debate.', maxTokens: 1024 })
+    scoreResult = await claudeJSON<DebateScore>({ system, user: 'Score this debate.', route: 'debate/score', maxTokens: 1024 })
   } catch (err) {
     console.error('Debate score error:', err)
     return NextResponse.json({ error: 'Failed to score' }, { status: 500 })

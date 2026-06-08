@@ -1,8 +1,9 @@
-// POST /api/learning-path/generate — Claude-generated learning path
+// POST /api/learning-path/generate — Claude-generated learning path (Sonnet)
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
+import { claudeJSON, SONNET, getCachedResponse, setCachedResponse } from '@/lib/claude'
+import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 
 type GenTopic = { skillNodeId: string; topicName: string; estimatedHours: number; why: string }
 type GenResult = {
@@ -13,41 +14,66 @@ type GenResult = {
   prerequisiteWarnings?: string[]
 }
 
+// Fix 2: static instructions (cacheable). Tree + goal go in the user message.
+const PATH_SYSTEM = `You are an expert curriculum designer. Based on the provided skill tree, create a learning path toward the user's goal.
+Return ONLY JSON: { "pathName": string, "topics": [{ "skillNodeId": string (MUST be a real id from the tree), "topicName": string, "estimatedHours": number, "why": string }], "totalHours": number, "suggestedWeeklyHours": number, "prerequisiteWarnings": string[] }.
+Order topics by logical dependency (prerequisites first). Be realistic about hours. Only use skillNodeIds that exist in the tree.`
+
 export async function POST(req: NextRequest) {
   const { goal, subject, weeks } = await req.json()
   if (!goal || !subject) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-  // Provide the skill tree so Claude can reference real node IDs
+  // Fix 3: compressed skill tree — id, name, mastery + prerequisite edge list only
   const nodes = await prisma.skillNode.findMany({
     where: { subject },
-    select: { id: true, name: true, tier: true, category: true, masteryLevel: true },
+    select: { id: true, name: true, masteryLevel: true, tier: true },
     orderBy: [{ tier: 'asc' }, { name: 'asc' }],
   })
+  const nodeIds = nodes.map(n => n.id)
+  const deps = await prisma.skillDependency.findMany({
+    where: { prerequisiteId: { in: nodeIds }, dependentId: { in: nodeIds } },
+    select: { prerequisiteId: true, dependentId: true },
+  })
+  const treeText = nodes.map(n => `${n.id}|${n.name}|m${n.masteryLevel}`).join('\n')
+  const edgeText = deps.map(d => `${d.prerequisiteId}->${d.dependentId}`).join(' ')
 
-  const treeText = nodes.map(n => `- ${n.name} (id:${n.id}, tier:${n.tier}, category:${n.category}, mastery:${n.masteryLevel})`).join('\n')
+  const validIds = new Set(nodeIds)
 
-  const system = `You are an expert curriculum designer. The user wants to: "${goal}" in ${subject}. They have approximately ${weeks ?? 12} weeks available.
-Based on the skill tree below, create a learning path.
-Return ONLY JSON: { "pathName": string, "topics": [{ "skillNodeId": string (MUST be a real id from the tree), "topicName": string, "estimatedHours": number, "why": string }], "totalHours": number, "suggestedWeeklyHours": number, "prerequisiteWarnings": string[] }.
-Order topics by logical dependency (prerequisites first). Be realistic about hours. Only use skillNodeIds that exist in the tree.
+  // Fix 7: response cache keyed by goal+subject (+ tree shape). 7-day TTL.
+  const cacheKey = { route: 'learning-path/generate', goal: goal.toLowerCase().trim(), subject, treeHash: nodeIds.length }
+  let result = await getCachedResponse<GenResult>('learning-path/generate', cacheKey)
 
-SKILL TREE:
-${treeText}`
+  if (!result) {
+    // Fix 9: rate limit + monthly cap before calling Claude
+    const cap = await checkMonthlyCap()
+    if (cap.overCap) return NextResponse.json({ error: 'Monthly budget reached. Learning-path generation paused until next month.', overCap: true }, { status: 429 })
+    const rl = await checkRateLimit('learning-path/generate')
+    if (!rl.allowed) return NextResponse.json({ error: 'Rate limit reached (5/day). Try again tomorrow.', resetAt: rl.resetAt }, { status: 429 })
 
-  let result: GenResult
-  try {
-    result = await claudeJSON<GenResult>({
-      system,
-      user: `Create a learning path to: ${goal}`,
-      maxTokens: 3000,
-    })
-  } catch (err) {
-    console.error('Learning path generation error:', err)
-    return NextResponse.json({ error: 'Failed to generate learning path' }, { status: 500 })
+    const userMsg = `Goal: "${goal}" in ${subject}. Weeks available: ${weeks ?? 12}.
+Skill tree (id|name|mastery):
+${treeText}
+Prerequisite edges (prereq->dependent):
+${edgeText}`
+
+    try {
+      result = await claudeJSON<GenResult>({
+        system: PATH_SYSTEM,
+        user: userMsg,
+        model: SONNET,                    // keep Sonnet — complex task
+        cacheSystem: true,                // Fix 2
+        route: 'learning-path/generate',  // Fix 10
+        maxTokens: 3000,
+      })
+      // Fix 1/7: cache generated paths for 90 days (goal+subject are deterministic)
+      await setCachedResponse('learning-path/generate', cacheKey, result, 90 * 24 * 60 * 60 * 1000)
+    } catch (err) {
+      console.error('Learning path generation error:', err)
+      return NextResponse.json({ error: 'Failed to generate learning path' }, { status: 500 })
+    }
   }
 
   // Validate node IDs against the tree
-  const validIds = new Set(nodes.map(n => n.id))
   const topics = (result.topics ?? []).filter(t => validIds.has(t.skillNodeId))
   if (topics.length === 0) return NextResponse.json({ error: 'No valid topics generated' }, { status: 500 })
 

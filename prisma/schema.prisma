@@ -54,6 +54,7 @@ model SkillNode {
   textbookChapters TextbookChapter[]
   socraticSessions SocraticSession[]
   studySessions    StudySession[]
+  quizTemplates    QuizTemplate[]
 }
 
 model SkillDependency {
@@ -247,4 +248,141 @@ model StudySession {
   source      String    @default("manual") // manual | auto
 
   skillNode SkillNode? @relation(fields: [skillNodeId], references: [id], onDelete: SetNull)
+}
+
+// ─── Cost-optimization models ─────────────────────────────────────────────────
+
+// Fix 10: log every Claude API call for auditing + cost analysis
+model APICall {
+  id                       String   @id @default(uuid())
+  route                    String
+  model                    String
+  inputTokens              Int      @default(0)
+  outputTokens             Int      @default(0)
+  cacheCreationInputTokens Int      @default(0)
+  cacheReadInputTokens     Int      @default(0)
+  responseMs               Int      @default(0)
+  costUsd                  Float    @default(0)
+  cacheHit                 Boolean  @default(false)   // true if served from ResponseCache (no API call)
+  createdAt                DateTime @default(now())
+
+  @@index([route])
+  @@index([createdAt])
+}
+
+// Fix 7: cache deterministic Claude responses keyed by input hash
+model ResponseCache {
+  id        String   @id @default(uuid())
+  routeName String
+  inputHash String   @unique
+  response  Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([routeName])
+}
+
+// Fix 5: pre-generated quiz question sets per topic (no API call at quiz time)
+model QuizTemplate {
+  id          String   @id @default(uuid())
+  skillNodeId String
+  questions   Json
+  difficulty  String   @default("Intermediate") // Basic | Intermediate | Advanced
+  createdAt   DateTime @default(now())
+
+  skillNode SkillNode @relation(fields: [skillNodeId], references: [id], onDelete: Cascade)
+
+  @@index([skillNodeId])
+}
+
+// Fix 9: per-user per-route rate limiting windows
+model RateLimitLog {
+  id        String   @id @default(uuid())
+  userId    String   @default("default")
+  routeName String
+  callCount Int      @default(0)
+  resetAt   DateTime
+
+  @@unique([userId, routeName])
+}
+
+// Fix 9: app-level settings (monthly spend cap, etc.)
+model AppSetting {
+  id              String @id @default("singleton")
+  monthlyCapUsd   Float  @default(5)
+}
+
+// ─── PART 1: real exam / exercise / mastery tracking + personal growth ────────
+
+model RealExam {
+  id               String   @id @default(uuid())
+  userId           String   @default("default")
+  skillNodeIds     Json     // array of skillNodeIds
+  examName         String
+  subject          String
+  date             DateTime @default(now())
+  performanceNotes String   @default("")
+  grade            String   @default("")
+  masteryImpact    Json     // { skillNodeId: masteryGain }
+  createdAt        DateTime @default(now())
+}
+
+model ExerciseSet {
+  id            String    @id @default(uuid())
+  userId        String    @default("default")
+  skillNodeIds  Json      // array of skillNodeIds
+  filename      String
+  uploadedAt    DateTime  @default(now())
+  masteryImpact Json      // { skillNodeId: masteryGain }
+  analyzedAt    DateTime?
+}
+
+model MasteryEvent {
+  id          String   @id @default(uuid())
+  userId      String   @default("default")
+  skillNodeId String
+  eventType   String   // quiz | exam | real_exam | exercise | manual | teach | debate
+  score       Float    @default(0)
+  masteryGain Float    @default(0)
+  timestamp   DateTime @default(now())
+
+  @@index([skillNodeId])
+  @@index([eventType])
+}
+
+model LearningAbility {
+  userId             String   @id @default("default")
+  focusScore         Int      @default(5)
+  recoveryScore      Int      @default(5)
+  mentalHealthScore  Int      @default(5)
+  stressLevel        Int      @default(5)
+  neuroplasticityTips Json    @default("[]")
+  focusTips          String   @default("")
+  recoveryTips       String   @default("")
+  mentalHealthTips   String   @default("")
+  avoidances         String   @default("")
+  lastUpdated        DateTime @updatedAt
+}
+
+model SelfImprovementGoals {
+  userId          String   @id @default("default")
+  books           Json     @default("[]")   // [{ title, progress, notes }]
+  disciplineHabits Json    @default("[]")   // [{ name, streak }]
+  healthHabits    Json     @default("[]")
+  spiritualGrowth Json     @default("[]")
+  lastUpdated     DateTime @updatedAt
+}
+
+model CareerPathProgress {
+  userId        String   @id @default("default")
+  interestAreas Json     @default("[]")   // array of career paths
+  progressByArea Json    @default("{}")   // { careerPath: { masteredTopics, relevantNodes, alignment } }
+  lastUpdated   DateTime @updatedAt
+}
+
+model APIUsage {
+  userId          String   @id @default("default")
+  creditsRemaining Float   @default(0)
+  lastFetched     DateTime @default(now())
+  nextRefresh     DateTime @default(now())
 }

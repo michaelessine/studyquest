@@ -27,7 +27,7 @@ Return ONLY JSON: { "validConnections": { "<index>": true|false }, "missingConne
 
   let result: ValidationResult
   try {
-    result = await claudeJSON<ValidationResult>({ system, user: 'Validate this concept map.', maxTokens: 1500 })
+    result = await claudeJSON<ValidationResult>({ system, user: 'Validate this concept map.', route: 'concept-map/validate', maxTokens: 1500 })
   } catch (err) {
     console.error('Concept map validation error:', err)
     return NextResponse.json({ error: 'Failed to validate' }, { status: 500 })

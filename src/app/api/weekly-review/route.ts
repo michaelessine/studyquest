@@ -1,10 +1,8 @@
 // POST /api/weekly-review — send weekly review text to Claude
-import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getTotalXP, getLevel } from '@/lib/xp'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+import { claudeText, HAIKU } from '@/lib/claude'
 
 export async function POST(req: NextRequest) {
   const { reviewText } = await req.json()
@@ -44,13 +42,13 @@ Do three things:
 3. Suggest a specific focus for next week with 3 concrete topics to prioritize.
 Be encouraging but honest. Keep response under 200 words.`
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 512,
+  // Fix 9: weekly summary is a simple task → Haiku, and logged for cost tracking
+  const text = await claudeText({
     system: systemPrompt,
-    messages: [{ role: 'user', content: reviewText }],
+    user: reviewText,
+    model: HAIKU,
+    route: 'weekly-review',
+    maxTokens: 512,
   })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return NextResponse.json({ response: text })
 }

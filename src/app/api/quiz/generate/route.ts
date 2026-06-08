@@ -1,76 +1,90 @@
-// POST /api/quiz/generate — generate a practice quiz for a skill node
-import Anthropic from '@anthropic-ai/sdk'
+// POST /api/quiz/generate — generate a quiz (template-first, else Haiku)
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
+import { claudeJSON, HAIKU } from '@/lib/claude'
+import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+type Question = { id: string; type: string; question: string; options?: string[]; correctAnswer: string; explanation: string }
+
+// Fix 2: static system prompt (identical across requests → cacheable)
+const QUIZ_SYSTEM = `You are an expert tutor generating quizzes.
+Return ONLY a JSON object, no preamble:
+{
+  "quizType": "practice" | "exam",
+  "questions": [
+    { "id": "q1", "type": "multiple_choice", "question": "...", "options": ["A) ...","B) ...","C) ...","D) ..."], "correctAnswer": "A) ...", "explanation": "..." },
+    { "id": "q6", "type": "short_answer", "question": "...", "correctAnswer": "Model answer: ...", "explanation": "..." }
+  ]
+}
+Rules:
+- Vary difficulty within the requested tier (Basic = recall, Intermediate = application, Advanced = synthesis/applied).
+- Multiple choice options must be plausible; exactly one correct.
+- For short answer, provide a concise model answer in correctAnswer.`
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 export async function POST(req: NextRequest) {
-  const { skillNodeId, topicName, subject, quizType = 'practice', questionCount } = await req.json()
+  const { skillNodeId, topicName, subject, quizType = 'practice', questionCount, forceNew } = await req.json()
   if (!skillNodeId || !topicName) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-  const numQuestions = questionCount ?? (quizType === 'exam' ? 20 : 8)
-  const mcCount      = quizType === 'exam' ? 13 : Math.ceil(numQuestions * 0.6)
-  const saCount      = numQuestions - mcCount
+  // Fix 9: rate limit + monthly cap (only when we'd actually call Claude)
+  // ── Fix 5: serve a pre-generated template when possible (no API call) ───────
+  if (quizType === 'practice' && !forceNew) {
+    const templates = await prisma.quizTemplate.findMany({ where: { skillNodeId } })
+    if (templates.length > 0) {
+      const chosen = templates[Math.floor(Math.random() * templates.length)]
+      const questions = shuffle(chosen.questions as Question[])
+      const quiz = await prisma.quiz.create({
+        data: { skillNodeId, topicName, subject, questions: questions as unknown as Prisma.InputJsonValue, quizType },
+      })
+      return NextResponse.json({ quiz, difficulty: chosen.difficulty, fromTemplate: true })
+    }
+  }
 
-  // ── Difficulty adaptation from recent quiz history ──────────────────────────
+  // No template (or forceNew) → call Claude. Apply rate limit + cap first.
+  const cap = await checkMonthlyCap()
+  if (cap.overCap) {
+    return NextResponse.json({ error: 'Monthly budget reached. Quiz generation paused until next month.', overCap: true }, { status: 429 })
+  }
+  const rl = await checkRateLimit('quiz/generate')
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Rate limit reached (20/hour). Try again later.', resetAt: rl.resetAt }, { status: 429 })
+  }
+
+  // Fix 3: trimmed context — recent scores only
   const recent = await prisma.quizResult.findMany({
-    where: { skillNodeId },
-    orderBy: { takenAt: 'desc' }, take: 5,
-    select: { score: true },
+    where: { skillNodeId }, orderBy: { takenAt: 'desc' }, take: 3, select: { score: true },
   })
   const recentScores = recent.map(r => r.score)
   const avg = recentScores.length ? recentScores.reduce((a, b) => a + b, 0) / recentScores.length : null
   const difficulty = avg === null ? 'Intermediate' : avg >= 85 ? 'Advanced' : avg >= 70 ? 'Intermediate' : 'Basic'
-  const difficultyInstruction = avg === null
-    ? 'No quiz history yet — generate intermediate (Tier 2) questions.'
-    : `The user's recent quiz scores: ${recentScores.map(s => `${s}%`).join(', ')} (avg ${Math.round(avg)}%). ` +
-      (avg >= 85 ? 'Generate Tier 3 (advanced/applied) questions.'
-        : avg >= 70 ? 'Generate Tier 2 (intermediate) questions.'
-        : 'Generate Tier 1 (basic recall) questions.') +
-      ' Vary the difficulty within the tier.'
 
-  const prompt = quizType === 'exam'
-    ? `Generate a comprehensive exam for the topic "${topicName}" in ${subject}. Include ${mcCount} multiple choice and ${saCount} short answer questions spanning multiple subtopics and difficulty levels.`
-    : `Generate a practice quiz for the topic "${topicName}" in ${subject}. Include ${mcCount} multiple choice and ${saCount} short answer questions.`
+  const numQuestions = questionCount ?? (quizType === 'exam' ? 20 : 8)
+  const mcCount = quizType === 'exam' ? 13 : Math.ceil(numQuestions * 0.6)
+  const saCount = numQuestions - mcCount
 
-  const systemPrompt = `You are an expert tutor. ${prompt}
-${difficultyInstruction}
-Return ONLY a JSON object, no preamble:
-{
-  "quizType": "${quizType === 'exam' ? 'exam' : 'practice'}",
-  "questions": [
-    {
-      "id": "q1",
-      "type": "multiple_choice",
-      "question": "...",
-      "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-      "correctAnswer": "A) ...",
-      "explanation": "..."
-    },
-    {
-      "id": "q6",
-      "type": "short_answer",
-      "question": "...",
-      "correctAnswer": "Model answer: ...",
-      "explanation": "..."
-    }
-  ]
-}
-Generate ${numQuestions} questions total (${mcCount} multiple choice, ${saCount} short answer). Vary difficulty from basic recall to applied understanding.`
+  // Dynamic context goes in the user message (keeps system prompt cacheable)
+  const userMsg = `Topic: "${topicName}" (${subject}). Difficulty tier: ${difficulty}.
+Generate ${numQuestions} questions: ${mcCount} multiple choice and ${saCount} short answer. quizType="${quizType}".`
 
-  let questions: unknown[]
+  let questions: Question[]
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: `Create the quiz for "${topicName}".` }],
+    const parsed = await claudeJSON<{ questions: Question[] }>({
+      system: QUIZ_SYSTEM,
+      user: userMsg,
+      model: HAIKU,            // Fix 1
+      cacheSystem: true,       // Fix 2
+      route: 'quiz/generate',  // Fix 10
+      maxTokens: 3000,
     })
-    const raw  = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    const json = raw.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '')
-    const parsed = JSON.parse(json)
     questions = parsed.questions ?? []
     if (!Array.isArray(questions) || questions.length === 0) throw new Error('No questions')
   } catch (err) {
@@ -78,8 +92,19 @@ Generate ${numQuestions} questions total (${mcCount} multiple choice, ${saCount}
     return NextResponse.json({ error: 'Failed to generate quiz' }, { status: 500 })
   }
 
+  // Fix 5: persist this fresh generation as a reusable template (practice only,
+  // capped at 3 per node) so future quizzes need no API call.
+  if (quizType === 'practice') {
+    const existing = await prisma.quizTemplate.count({ where: { skillNodeId } })
+    if (existing < 3) {
+      await prisma.quizTemplate.create({
+        data: { skillNodeId, questions: questions as unknown as Prisma.InputJsonValue, difficulty },
+      }).catch(() => {})
+    }
+  }
+
   const quiz = await prisma.quiz.create({
-    data: { skillNodeId, topicName, subject, questions: questions as Prisma.InputJsonValue, quizType },
+    data: { skillNodeId, topicName, subject, questions: questions as unknown as Prisma.InputJsonValue, quizType },
   })
-  return NextResponse.json({ quiz, difficulty })
+  return NextResponse.json({ quiz, difficulty, fromTemplate: false })
 }

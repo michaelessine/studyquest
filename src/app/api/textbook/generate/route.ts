@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { claudeText } from '@/lib/claude'
+import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   const { skillNodeId, topicName, level } = await req.json()
@@ -9,11 +10,17 @@ export async function POST(req: NextRequest) {
 
   const userLevel = Math.max(0, Math.min(5, Math.round(level ?? 0)))
 
-  // Return cached chapter if present for this (node, level)
+  // Return cached chapter if present for this (node, level) — no rate limit hit
   const cached = await prisma.textbookChapter.findUnique({
     where: { skillNodeId_userLevel: { skillNodeId, userLevel } },
   })
   if (cached) return NextResponse.json({ chapter: cached, cached: true })
+
+  // Fix 9: rate limit + monthly cap before generating a new chapter
+  const cap = await checkMonthlyCap()
+  if (cap.overCap) return NextResponse.json({ error: 'Monthly budget reached. Chapter generation paused until next month.', overCap: true }, { status: 429 })
+  const rl = await checkRateLimit('textbook/generate')
+  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit reached (3/day).', resetAt: rl.resetAt }, { status: 429 })
 
   const system = `Write a textbook chapter (1500-2000 words) on "${topicName}" for a student at mastery level ${userLevel}.
 At level 0-1: explain fundamentals and intuitions, lots of examples. At level 3-4: dive into proofs, derivations, edge cases. At level 5: discuss open problems and research directions.
@@ -22,7 +29,7 @@ Return ONLY the markdown text, no JSON wrapper.`
 
   let content: string
   try {
-    content = await claudeText({ system, user: `Write the chapter on ${topicName}.`, maxTokens: 4000 })
+    content = await claudeText({ system, user: `Write the chapter on ${topicName}.`, route: 'textbook/generate', maxTokens: 4000 })
     if (!content.trim()) throw new Error('Empty content')
   } catch (err) {
     console.error('Textbook generation error:', err)

@@ -4,7 +4,7 @@ import { Loader2, GraduationCap, CheckCircle2, XCircle, ChevronRight } from 'luc
 import { SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from './ToastProvider'
 
-type SubjectStat = { subject: string; studied: number }
+type SubjectStat = { subject: string; studied: number; batchTopics: { skillNodeId: string; topicName: string }[] }
 type ExamResult = { id: string; score: number; passed: boolean; takenAt: string; topicName: string; subject: string }
 
 type Question = {
@@ -37,6 +37,22 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
   const [evalResult, setEvalResult] = useState<EvalResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [examSubject, setExamSubject] = useState<string>('')
+  const [batching, setBatching] = useState<string | null>(null)
+
+  async function batchGenerate(subject: string, topics: { skillNodeId: string; topicName: string }[]) {
+    if (topics.length === 0) { showToast('info', 'All topics already have quiz templates'); return }
+    setBatching(subject)
+    try {
+      const res = await fetch('/api/quiz/generate-batch', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, topics }),
+      })
+      const data = await res.json()
+      if (res.status === 429) showToast('info', data.error ?? 'Rate limited')
+      else showToast('info', `Pre-generated ${data.generated ?? 0} quiz templates (1 API call)`)
+    } catch { showToast('info', 'Batch generation failed') }
+    finally { setBatching(null) }
+  }
 
   async function startExam(subject: string) {
     setExamSubject(subject)
@@ -182,6 +198,12 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
               <button onClick={() => startExam(s.subject)} disabled={s.studied === 0}
                 className="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
                 {s.studied === 0 ? 'Study a topic first' : 'Take Exam'}
+              </button>
+              <button onClick={() => batchGenerate(s.subject, s.batchTopics)} disabled={batching === s.subject || s.batchTopics.length === 0}
+                title="Pre-generate quiz templates for up to 5 topics in a single API call"
+                className="text-[11px] px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-30 text-gray-300 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                {batching === s.subject ? <Loader2 size={11} className="animate-spin" /> : null}
+                Pre-generate quizzes ({s.batchTopics.length})
               </button>
             </div>
           ))}

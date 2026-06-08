@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
+import { claudeJSON, HAIKU } from '@/lib/claude'
 import { cascadeUnlock } from '@/lib/unlock'
 import { incrementMastery, getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
 
@@ -23,7 +23,7 @@ Return ONLY JSON: { "score": number, "insights": string, "gaps": string, "nextSt
 
   let result: SocraticScore
   try {
-    result = await claudeJSON<SocraticScore>({ system, user: 'Score this session.', maxTokens: 1024 })
+    result = await claudeJSON<SocraticScore>({ system, user: 'Score this session.', model: HAIKU, route: 'socratic/score', maxTokens: 1024 })
   } catch (err) {
     console.error('Socratic score error:', err)
     return NextResponse.json({ error: 'Failed to score' }, { status: 500 })

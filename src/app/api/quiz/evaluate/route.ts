@@ -1,11 +1,21 @@
 // POST /api/quiz/evaluate — evaluate answers, update mastery, cascade unlock
-import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { claudeJSON, HAIKU } from '@/lib/claude'
 import { cascadeUnlock } from '@/lib/unlock'
 import { incrementMastery, getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// Fix 2: static system prompt (cacheable). Questions/answers go in the user message.
+const EVAL_SYSTEM = `You are an expert grader. Evaluate quiz answers.
+For multiple choice: mark correct/incorrect by comparing to correctAnswer exactly.
+For short answers: assess whether the user's answer demonstrates understanding of the key concept — be generous but accurate.
+Return ONLY JSON:
+{
+  "score": number (0-100),
+  "passed": boolean (score >= 70),
+  "feedback": "2-3 sentence overall feedback",
+  "questionResults": [ { "id": "q1", "correct": boolean, "userAnswer": "...", "feedback": "1 sentence" } ]
+}`
 
 export async function POST(req: NextRequest) {
   const { quizId, skillNodeId, answers } = await req.json()
@@ -16,20 +26,7 @@ export async function POST(req: NextRequest) {
 
   const questions = quiz.questions as Array<{ id: string; type: string; question: string; options?: string[]; correctAnswer: string; explanation: string }>
 
-  const evalPrompt = `Evaluate these quiz answers.
-For multiple choice: mark correct/incorrect by comparing to correctAnswer exactly.
-For short answers: assess whether the user's answer demonstrates understanding of the key concept — be generous but accurate.
-Return ONLY JSON:
-{
-  "score": number (0-100),
-  "passed": boolean (score >= 70),
-  "feedback": "2-3 sentence overall feedback",
-  "questionResults": [
-    { "id": "q1", "correct": boolean, "userAnswer": "...", "feedback": "1 sentence" }
-  ]
-}
-
-Questions and answers:
+  const userMsg = `Questions and answers:
 ${questions.map(q => {
   const ua = (answers as Array<{id:string;answer:string}>).find(a => a.id === q.id)?.answer ?? ''
   return `Q(${q.id}) [${q.type}]: ${q.question}
@@ -39,13 +36,14 @@ User answered: ${ua}`
 
   let evalResult: { score: number; passed: boolean; feedback: string; questionResults: Array<{id:string;correct:boolean;userAnswer:string;feedback:string}> }
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: evalPrompt }],
+    evalResult = await claudeJSON({
+      system: EVAL_SYSTEM,
+      user: userMsg,
+      model: HAIKU,            // Fix 1
+      cacheSystem: true,       // Fix 2
+      route: 'quiz/evaluate',  // Fix 10
+      maxTokens: 2000,
     })
-    const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    evalResult = JSON.parse(raw.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, ''))
   } catch (err) {
     console.error('Evaluation error:', err)
     return NextResponse.json({ error: 'Failed to evaluate quiz' }, { status: 500 })

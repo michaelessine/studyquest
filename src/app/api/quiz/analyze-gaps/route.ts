@@ -1,7 +1,7 @@
 // POST /api/quiz/analyze-gaps — suggest weak prerequisites after a failed quiz
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
+import { claudeJSON, HAIKU } from '@/lib/claude'
 
 type GapResult = {
   weakPrerequisites: { skillNodeId: string; topicName: string; masteryLevel: number; why: string }[]
@@ -48,6 +48,8 @@ Return ONLY JSON: { "weakPrerequisites": [{ "skillNodeId": string, "topicName": 
     const result = await claudeJSON<GapResult>({
       system,
       user: `Analyze the knowledge gaps for ${topicName}.`,
+      model: HAIKU,                  // Fix 1
+      route: 'quiz/analyze-gaps',    // Fix 10
       maxTokens: 1024,
     })
     // Validate prereq ids

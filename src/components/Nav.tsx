@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings } from 'lucide-react'
 
 const links = [
   { href: '/',               label: 'Dashboard',      icon: LayoutDashboard },
@@ -14,6 +14,7 @@ const links = [
   { href: '/schedule',       label: 'Schedule',       icon: Calendar },
   { href: '/techniques',     label: 'Techniques',     icon: FlaskConical },
   { href: '/chat',           label: 'AI Chat',        icon: MessageCircle },
+  { href: '/settings',       label: 'Settings',       icon: Settings },
 ]
 
 // Desktop sidebar — fixed left panel, 256px wide

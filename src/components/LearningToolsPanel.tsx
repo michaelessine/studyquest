@@ -82,7 +82,7 @@ function TeachMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skillNo
 }
 
 // ── Debate mode ───────────────────────────────────────────────────────────────
-function DebateMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skillNodeId: string; topicName: string; onMasteryUpdated: (ml: number) => void; back: () => void }) {
+function DebateMode({ skillNodeId, topicName, mastery, onMasteryUpdated, back }: { skillNodeId: string; topicName: string; mastery: number; onMasteryUpdated: (ml: number) => void; back: () => void }) {
   const { showToast } = useToast()
   const [claim, setClaim] = useState('')
   const [started, setStarted] = useState(false)
@@ -99,7 +99,7 @@ function DebateMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skillN
     try {
       const res = await fetch('/api/debate/start', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topicName, claim, turns: [] }),
+        body: JSON.stringify({ topicName, claim, turns: [], mastery }),
       })
       const data = await res.json()
       setTurns([{ role: 'claude', text: `${data.claudeResponse}\n\n${data.questionToUser}` }])
@@ -383,7 +383,7 @@ export default function LearningToolsPanel({ skillNodeId, topicName, subject, cu
   const back = () => setTool('menu')
 
   if (tool === 'teach')    return <TeachMode skillNodeId={skillNodeId} topicName={topicName} onMasteryUpdated={onMasteryUpdated} back={back} />
-  if (tool === 'debate')   return <DebateMode skillNodeId={skillNodeId} topicName={topicName} onMasteryUpdated={onMasteryUpdated} back={back} />
+  if (tool === 'debate')   return <DebateMode skillNodeId={skillNodeId} topicName={topicName} mastery={currentMastery} onMasteryUpdated={onMasteryUpdated} back={back} />
   if (tool === 'research') return <ResearchMode skillNodeId={skillNodeId} topicName={topicName} back={back} />
   if (tool === 'socratic') return <SocraticMode skillNodeId={skillNodeId} topicName={topicName} onMasteryUpdated={onMasteryUpdated} back={back} />
   if (tool === 'textbook') return <TextbookMode skillNodeId={skillNodeId} topicName={topicName} currentMastery={currentMastery} back={back} />

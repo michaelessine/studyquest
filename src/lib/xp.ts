@@ -74,5 +74,5 @@ export const SUBJECT_LABEL: Record<Subject, string> = {
   Finance:          'Finance',
   Economics:        'Economics',
   QuantumMechanics: 'Quantum Mechanics',
-  Others:           'Other Topics',
+  Others:           'Other Learning',
 }

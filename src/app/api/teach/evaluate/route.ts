@@ -19,15 +19,16 @@ export async function POST(req: NextRequest) {
   const { skillNodeId, topicName, explanation } = await req.json()
   if (!skillNodeId || !topicName || !explanation) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-  const system = `The user is teaching the topic "${topicName}". Their explanation:
-"""${explanation}"""
-
-Evaluate on: 1) Clarity (is it understandable?), 2) Completeness (did they cover key points?), 3) Misconceptions (did they say anything incorrect?).
+  // Fix 2: static system (cacheable); topic + explanation go in the user message
+  const system = `You evaluate a student's teaching explanation. Evaluate on: 1) Clarity (is it understandable?), 2) Completeness (did they cover key points?), 3) Misconceptions (did they say anything incorrect?).
 Return ONLY JSON: { "clarity": 1-5, "completeness": 1-5, "misconceptions": [{ "statement": string, "correction": string }], "overallScore": 0-100, "feedback": string (2-3 sentences), "suggestedImprovements": string[] }`
+
+  const userMsg = `Topic: "${topicName}". Student's explanation:
+"""${explanation}"""`
 
   let evaluation: TeachEval
   try {
-    evaluation = await claudeJSON<TeachEval>({ system, user: `Evaluate the explanation of ${topicName}.`, maxTokens: 1500 })
+    evaluation = await claudeJSON<TeachEval>({ system, user: userMsg, cacheSystem: true, route: 'teach/evaluate', maxTokens: 1500 })
   } catch (err) {
     console.error('Teach eval error:', err)
     return NextResponse.json({ error: 'Failed to evaluate' }, { status: 500 })
