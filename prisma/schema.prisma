@@ -1,0 +1,99 @@
+// StudyQuest Prisma schema — PostgreSQL (Neon)
+// Status fields use plain String so values are enforced at the app layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+model Course {
+  id        String   @id @default(uuid())
+  code      String?
+  name      String
+  subject   String   // Mathematics | ComputerScience | Finance | Economics | QuantumMechanics
+  semester  String?
+  year      Int?
+  status    String   @default("active")    // active | completed | planned
+  grade     Float?   // GPA-scale 0–4.0
+  xpAwarded Int      @default(0)
+  createdAt DateTime @default(now())
+
+  topics     Topic[]
+  deadlines  Deadline[]
+  sessions   SessionLog[]
+  skillNodes SkillNode[]
+}
+
+model SkillNode {
+  id       String  @id @default(uuid())
+  name     String
+  subject  String
+  status   String  @default("locked")  // locked | unlocked | mastered
+  xpValue  Int     @default(100)
+  courseId String?
+
+  course        Course?           @relation(fields: [courseId], references: [id])
+  prerequisites SkillDependency[] @relation("Dependent")
+  dependents    SkillDependency[] @relation("Prerequisite")
+  topics        Topic[]
+}
+
+// Self-join: one prerequisite unlocks one dependent
+model SkillDependency {
+  prerequisiteId String
+  dependentId    String
+
+  prerequisite SkillNode @relation("Prerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  dependent    SkillNode @relation("Dependent",    fields: [dependentId],    references: [id], onDelete: Cascade)
+
+  @@id([prerequisiteId, dependentId])
+}
+
+model Topic {
+  id          String  @id @default(uuid())
+  courseId    String
+  skillNodeId String?
+  title       String
+  week        Int     @default(1)
+  status      String  @default("pending")  // pending | done
+  source      String?
+
+  course    Course     @relation(fields: [courseId], references: [id])
+  skillNode SkillNode? @relation(fields: [skillNodeId], references: [id])
+}
+
+model Deadline {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  type      String   // exam | assignment | quiz | reading
+  dueDate   DateTime
+  completed Boolean  @default(false)
+  xpValue   Int      @default(100)
+
+  course Course @relation(fields: [courseId], references: [id])
+}
+
+model SessionLog {
+  id           String   @id @default(uuid())
+  courseId     String?
+  loggedAt     DateTime @default(now())
+  rawNote      String
+  durationMins Int      @default(30)
+  xpEarned     Int      @default(10)
+
+  course Course? @relation(fields: [courseId], references: [id])
+}
+
+model Achievement {
+  id         String    @id @default(uuid())
+  name       String    @unique
+  condition  String
+  unlockedAt DateTime?
+}

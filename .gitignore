@@ -1,0 +1,27 @@
+# Dependencies
+/node_modules
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Environment variables - never commit these
+.env
+.env.local
+.env.*.local
+
+# Database (SQLite dev files — never commit)
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/*.db-wal
+/prisma/*.db-shm
+
+# Debug
+npm-debug.log*
+
+# Misc
+.DS_Store
+*.pem

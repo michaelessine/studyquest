@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base dark theme ─────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #030712; /* gray-950 */
+  color: #f1f5f9;
+}
+
+/* ── Custom scrollbar (purple accent) ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6d28d9; }
+
+/* ── React Flow overrides ───────────────────────────────────────────────── */
+.react-flow__background { background-color: #0a0a0f !important; }
+.react-flow__edge-path { stroke: #4b5563; }
+.react-flow__edge.animated .react-flow__edge-path { stroke: #7c3aed; }
+.react-flow__controls button { background: #1f2937; border-color: #374151; color: #d1d5db; }
+.react-flow__controls button:hover { background: #374151; }
+
+/* ── Toast slide-in animation ───────────────────────────────────────────── */
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-slide-in {
+  animation: toast-slide-in 0.25s ease-out forwards;
+}
+
+/* ── Utility: purple glow card border ───────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-gray-900 border border-gray-800 rounded-xl;
+  }
+  .card-purple {
+    @apply bg-gray-900 border border-purple-900/40 rounded-xl;
+  }
+  .badge {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+}
