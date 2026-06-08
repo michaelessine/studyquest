@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import { differenceInDays, format } from 'date-fns'
-import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle } from 'lucide-react'
+import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle, GraduationCap, Route } from 'lucide-react'
 import Link from 'next/link'
 import DashboardClient from '@/components/DashboardClient'
 
@@ -14,7 +14,7 @@ function typeBadge(t: string) {
 }
 
 export default async function DashboardPage() {
-  const [skillNodes, upcomingDeadlines, activeTopics] = await Promise.all([
+  const [skillNodes, upcomingDeadlines, activeTopics, recentExams] = await Promise.all([
     prisma.skillNode.findMany({ select: { id: true, name: true, subject: true, status: true, masteryLevel: true, nextReviewAt: true, reviewIntervalDays: true } }),
     prisma.deadline.findMany({
       where: { completed: false }, orderBy: { dueDate: 'asc' }, take: 3,
@@ -25,15 +25,45 @@ export default async function DashboardPage() {
       include: { course: { select: { name: true, code: true } } },
       orderBy: [{ week: 'asc' }], take: 6,
     }),
+    prisma.quizResult.findMany({
+      where: { quiz: { quizType: 'exam' } },
+      orderBy: { takenAt: 'desc' }, take: 5,
+      include: { quiz: { select: { subject: true, topicName: true } } },
+    }),
   ])
+
+  // Pinned learning path (Feature 1 integration)
+  const pinnedPath = await prisma.learningPath.findFirst({ where: { pinned: true } })
+  let pinnedPathView: { id: string; name: string; subject: string; pct: number; nextTopic: string | null } | null = null
+  if (pinnedPath) {
+    const topicIds = (pinnedPath.topics as string[]) ?? []
+    const masteryById = new Map(skillNodes.map(n => [n.id, n.masteryLevel]))
+    const nameById = new Map(skillNodes.map(n => [n.id, n.name]))
+    const completed = topicIds.filter(id => (masteryById.get(id) ?? 0) >= 5).length
+    const nextId = topicIds.find(id => (masteryById.get(id) ?? 0) < 5)
+    pinnedPathView = {
+      id: pinnedPath.id, name: pinnedPath.name, subject: pinnedPath.subject,
+      pct: topicIds.length ? Math.round((completed / topicIds.length) * 100) : 0,
+      nextTopic: nextId ? (nameById.get(nextId) ?? null) : null,
+    }
+  }
 
   const subjectProgress = SUBJECTS.map(subject => {
     const ns = skillNodes.filter(n => n.subject === subject)
-    const mastered = ns.filter(n => n.masteryLevel === 5).length
+    const mastered = ns.filter(n => n.masteryLevel >= 5).length
     const active   = ns.filter(n => n.masteryLevel >= 1 && n.masteryLevel < 5).length
     const pct = ns.length > 0 ? Math.round((mastered / ns.length) * 100) : 0
     return { subject, mastered, active, pct }
   })
+
+  function examGrade(score: number): string {
+    if (score >= 90) return '5'
+    if (score >= 80) return '4'
+    if (score >= 70) return '3'
+    if (score >= 60) return '2'
+    if (score >= 50) return '1'
+    return 'Failed'
+  }
 
   // Due for review — nextReviewAt in the past
   const now = new Date()
@@ -56,6 +86,30 @@ export default async function DashboardPage() {
 
       {/* Client-only features: weekly review banner + connections feed */}
       <DashboardClient skillNodes={plainSkillNodes} />
+
+      {/* In progress — pinned learning path */}
+      {pinnedPathView && (
+        <div className="card p-5 border-purple-700/50">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-200 flex items-center gap-2">
+              <Route size={15} className="text-purple-400" /> In Progress
+            </h2>
+            <Link href="/learning-paths" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">All paths <ChevronRight size={12} /></Link>
+          </div>
+          <div className="text-sm font-medium text-gray-200">{pinnedPathView.name}</div>
+          <div className="h-2 bg-gray-800 rounded-full overflow-hidden my-2">
+            <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full" style={{ width: `${pinnedPathView.pct}%` }} />
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">{pinnedPathView.pct}% complete</span>
+            {pinnedPathView.nextTopic && (
+              <Link href={`/topics?subject=${pinnedPathView.subject}`} className="text-purple-400 hover:text-purple-300">
+                Next: {pinnedPathView.nextTopic} →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Subject progress */}
       <div className="card p-5">
@@ -94,6 +148,33 @@ export default async function DashboardPage() {
             {dueNodes.map(n => (
               <ReviewCard key={n.id} name={n.name} subject={n.subject}
                 masteryLevel={n.masteryLevel} nextReviewAt={n.nextReviewAt?.toISOString() ?? null} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent exams */}
+      {recentExams.length > 0 && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-200 flex items-center gap-2">
+              <GraduationCap size={15} className="text-purple-400" />
+              Recent Exams
+            </h2>
+            <Link href="/quiz" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">Take an exam <ChevronRight size={12} /></Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {recentExams.map(e => (
+              <div key={e.id} className={`flex items-center justify-between px-3 py-2.5 rounded-lg border ${e.passed ? 'bg-green-950/20 border-green-900/30' : 'bg-gray-800/60 border-gray-700'}`}>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-200 truncate">{SUBJECT_LABEL[e.quiz.subject as keyof typeof SUBJECT_LABEL] ?? e.quiz.subject}</div>
+                  <div className="text-[10px] text-gray-500">{format(new Date(e.takenAt), 'MMM d')}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className={`text-base font-bold ${e.passed ? 'text-green-400' : 'text-red-400'}`}>{e.score}%</div>
+                  <div className="text-[10px] text-gray-500">Grade {examGrade(e.score)}</div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -169,11 +250,13 @@ function ReviewCard({ name, subject, masteryLevel, nextReviewAt }: {
   name: string; subject: string; masteryLevel: number; nextReviewAt: string | null
 }) {
   const overdue = nextReviewAt ? Math.max(0, differenceInDays(new Date(), new Date(nextReviewAt))) : 0
-  const stars   = '★'.repeat(masteryLevel) + '☆'.repeat(5 - masteryLevel)
+  const full    = Math.floor(masteryLevel)
+  const hasHalf = masteryLevel - full >= 0.5
+  const stars   = '★'.repeat(full) + (hasHalf ? '⯨' : '') + '☆'.repeat(5 - full - (hasHalf ? 1 : 0))
   return (
     <div className="bg-yellow-950/20 border border-yellow-800/30 rounded-lg p-3">
       <div className="text-sm font-medium text-gray-200 truncate">{name}</div>
-      <div className="text-[10px] text-gray-500 mt-0.5">{subject}</div>
+      <div className="text-[10px] text-gray-500 mt-0.5">{SUBJECT_LABEL[subject as keyof typeof SUBJECT_LABEL] ?? subject}</div>
       <div className="text-[10px] text-yellow-400 mt-1">{stars}</div>
       {overdue > 0 && <div className="text-[10px] text-yellow-600 mt-0.5">{overdue}d overdue</div>}
     </div>

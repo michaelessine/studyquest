@@ -1,15 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, GitBranch, List, Calendar, MessageCircle, FlaskConical } from 'lucide-react'
+import { LayoutDashboard, GitBranch, List, GraduationCap, MessageCircle } from 'lucide-react'
 
 const links = [
-  { href: '/',           label: 'Home',       icon: LayoutDashboard },
-  { href: '/topics',     label: 'Topics',     icon: List },
-  { href: '/skills',     label: 'Skills',     icon: GitBranch },
-  { href: '/schedule',   label: 'Schedule',   icon: Calendar },
-  { href: '/techniques', label: 'Techniques', icon: FlaskConical },
-  { href: '/chat',       label: 'Chat',       icon: MessageCircle },
+  { href: '/',       label: 'Home',   icon: LayoutDashboard },
+  { href: '/topics', label: 'Topics', icon: List },
+  { href: '/skills', label: 'Skills', icon: GitBranch },
+  { href: '/quiz',   label: 'Quiz',   icon: GraduationCap },
+  { href: '/chat',   label: 'Chat',   icon: MessageCircle },
 ]
 
 // Mobile bottom tab bar — only shown on small screens

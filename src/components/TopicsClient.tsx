@@ -1,7 +1,7 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ChevronDown, ChevronRight, ExternalLink, Lock } from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, Lock, RefreshCw, Loader2 } from 'lucide-react'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from './ToastProvider'
 import StarRating from './StarRating'
@@ -75,9 +75,9 @@ function ResourceLinks({ name }: { name: string }) {
 
 // ── Mastery → card style ──────────────────────────────────────────────────────
 function cardStyle(status: string, ml: number) {
-  if (ml === 5) return 'bg-green-950/20 border-green-900/40'
-  if (ml >= 3)  return 'bg-purple-950/20 border-purple-900/40'
-  if (ml >= 1)  return 'bg-blue-950/20 border-blue-900/30'
+  if (ml >= 5) return 'bg-green-950/20 border-green-900/40'
+  if (ml >= 3) return 'bg-purple-950/20 border-purple-900/40'
+  if (ml >= 1) return 'bg-blue-950/20 border-blue-900/30'
   if (status === 'unlocked') return 'bg-gray-900 border-gray-700 hover:border-purple-700/50'
   return 'bg-gray-900/50 border-gray-800 opacity-60'
 }
@@ -155,7 +155,22 @@ export default function TopicsClient({ nodes }: Props) {
     return (s && SUBJECTS.includes(s as Subject) ? s : 'Mathematics') as Subject
   })
   const [saving, setSaving]           = useState<string | null>(null)
+  const [recalculating, setRecalculating] = useState(false)
   const [localMastery, setLocalMastery] = useState<Map<string, number>>(new Map())
+
+  async function recalcUnlocks() {
+    setRecalculating(true)
+    try {
+      const res = await fetch('/api/cascade-unlock', { method: 'POST' })
+      const data = await res.json()
+      showToast('info', `Recalculated — ${data.unlocked ?? 0} node(s) unlocked`)
+      router.refresh()
+    } catch {
+      showToast('info', 'Recalculation failed')
+    } finally {
+      setRecalculating(false)
+    }
+  }
 
   // Clear optimistic state when server data refreshes
   useEffect(() => {
@@ -178,8 +193,8 @@ export default function TopicsClient({ nodes }: Props) {
         body: JSON.stringify({ type: 'skillNode', masteryLevel: ml }),
       })
       const name = nodes.find(n => n.id === id)?.name ?? 'Topic'
-      if (ml === 5) showToast('info', `★★★★★ ${name} mastered!`)
-      else if (ml > 0) showToast('info', `Rated "${name}" ${ml} star${ml !== 1 ? 's' : ''}`)
+      if (ml >= 5) showToast('info', `★★★★★ ${name} mastered!`)
+      else if (ml > 0) showToast('info', `Rated "${name}" ${ml}★`)
       router.refresh()
     } catch {
       setLocalMastery(prev => { const m = new Map(prev); m.delete(id); return m })
@@ -201,9 +216,9 @@ export default function TopicsClient({ nodes }: Props) {
 
   return (
     <div className="overflow-x-hidden">
-      {/* Subject tabs */}
-      <div className="relative border-b border-gray-800">
-        <div className="flex gap-2 px-5 py-3 overflow-x-auto scrollbar-none">
+      {/* Subject tabs + admin actions */}
+      <div className="relative border-b border-gray-800 flex items-center">
+        <div className="flex gap-2 px-5 py-3 overflow-x-auto scrollbar-none flex-1">
           {SUBJECTS.map(s => {
             const st = stats.find(x => x.subject === s)!
             const active = s === subject
@@ -219,7 +234,12 @@ export default function TopicsClient({ nodes }: Props) {
             )
           })}
         </div>
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-950 to-transparent" />
+        <button onClick={recalcUnlocks} disabled={recalculating}
+          title="Re-evaluate all locked nodes against their prerequisites"
+          className="shrink-0 flex items-center gap-1.5 mx-3 px-3 py-1.5 text-xs bg-gray-800/60 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg transition-colors disabled:opacity-50">
+          {recalculating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+          Recalculate unlocks
+        </button>
       </div>
 
       {/* Category groups */}

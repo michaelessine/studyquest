@@ -83,7 +83,7 @@ export default function DashboardClient({ skillNodes }: Props) {
               <div key={n.id} className="bg-yellow-950/20 border border-yellow-800/30 rounded-lg p-2.5">
                 <div className="text-xs font-medium text-gray-200 truncate">{n.name}</div>
                 <div className="text-[10px] text-gray-500">{SUBJECT_LABEL[n.subject as Subject] ?? n.subject}</div>
-                <div className="text-[10px] text-yellow-400 my-1">{'★'.repeat(n.masteryLevel)}{'☆'.repeat(5-n.masteryLevel)}</div>
+                <div className="text-[10px] text-yellow-400 my-1">{'★'.repeat(Math.floor(n.masteryLevel))}{n.masteryLevel % 1 >= 0.5 ? '⯨' : ''}{'☆'.repeat(5 - Math.ceil(n.masteryLevel))}</div>
                 {overdue > 0 && <div className="text-[10px] text-yellow-600">{overdue}d overdue</div>}
                 <button
                   disabled={reviewingNode === n.id}

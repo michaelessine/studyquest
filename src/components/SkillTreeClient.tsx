@@ -5,10 +5,13 @@ import type { Node, Edge, NodeProps } from '@xyflow/react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
-import { Loader2, X, ExternalLink } from 'lucide-react'
+import { Loader2, X, ExternalLink, GraduationCap } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from './ToastProvider'
 import StarRating from './StarRating'
+import QuizPanel from './QuizPanel'
+import LearningToolsPanel from './LearningToolsPanel'
 
 const ReactFlow  = dynamic(() => import('@xyflow/react').then(m => m.ReactFlow),  { ssr: false, loading: () => <div className="flex items-center justify-center h-full gap-3 text-gray-500"><Loader2 size={28} className="animate-spin text-purple-500" /><span className="text-sm">Loading…</span></div> })
 const Background = dynamic(() => import('@xyflow/react').then(m => m.Background), { ssr: false })
@@ -29,9 +32,9 @@ interface Props {
 
 // Mastery level → node visual style
 function nodeStyle(ml: number, status: string): string {
-  if (ml === 5) return 'bg-green-900/70 border-green-600 text-green-200 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
-  if (ml >= 3)  return 'bg-purple-900/70 border-purple-600 text-purple-200 shadow-[0_0_12px_rgba(124,58,237,0.3)]'
-  if (ml >= 1)  return 'bg-blue-900/70 border-blue-600 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.25)]'
+  if (ml >= 5) return 'bg-green-900/70 border-green-600 text-green-200 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
+  if (ml >= 3) return 'bg-purple-900/70 border-purple-600 text-purple-200 shadow-[0_0_12px_rgba(124,58,237,0.3)]'
+  if (ml >= 1) return 'bg-blue-900/70 border-blue-600 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.25)]'
   if (status === 'unlocked') return 'bg-gray-800/80 border-gray-500 text-gray-300'
   return 'bg-gray-800/50 border-gray-700 text-gray-600'
 }
@@ -48,7 +51,7 @@ function SkillNodeComponent({ data }: NodeProps) {
         {[1,2,3,4,5].map(i => (
           <svg key={i} width={9} height={9} viewBox="0 0 24 24"
             fill={i <= stars ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"
-            className={i <= stars ? (stars===5?'text-green-400':stars>=3?'text-purple-400':'text-blue-400') : 'text-gray-600'}>
+            className={i <= stars ? (stars>=5?'text-green-400':stars>=3?'text-purple-400':'text-blue-400') : 'text-gray-600'}>
             <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
           </svg>
         ))}
@@ -113,13 +116,14 @@ function computeLayout(rawNodes: Props['nodes'], rawDeps: Props['deps']) {
 }
 
 // ── Side panel ────────────────────────────────────────────────────────────────
-function SidePanel({ node, deps, allNodes, onRate, onClose, saving }: {
+function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpdated }: {
   node: Props['nodes'][0]
   deps: Props['deps']
   allNodes: Props['nodes']
   onRate: (id: string, ml: number) => void
   onClose: () => void
   saving: boolean
+  onMasteryUpdated: (id: string, ml: number) => void
 }) {
   const prereqIds = deps.filter(d => d.dependentId === node.id).map(d => d.prerequisiteId)
   const prereqNames = prereqIds.map(id => allNodes.find(n => n.id === id)?.name ?? '').filter(Boolean)
@@ -185,6 +189,36 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving }: {
             ))}
           </div>
         </div>
+
+        {/* Quiz & practice */}
+        {node.status !== 'locked' && (
+          <div className="border-t border-gray-800 pt-4">
+            <div className="text-xs text-gray-500 mb-2">Practice</div>
+            <QuizPanel
+              key={node.id}
+              skillNodeId={node.id}
+              topicName={node.name}
+              subject={node.subject}
+              currentMastery={node.masteryLevel}
+              onMasteryUpdated={ml => onMasteryUpdated(node.id, ml)}
+            />
+          </div>
+        )}
+
+        {/* Deep learning tools */}
+        {node.status !== 'locked' && (
+          <div className="border-t border-gray-800 pt-4">
+            <div className="text-xs text-gray-500 mb-2">Deep Learning Tools</div>
+            <LearningToolsPanel
+              key={node.id}
+              skillNodeId={node.id}
+              topicName={node.name}
+              subject={node.subject}
+              currentMastery={node.masteryLevel}
+              onMasteryUpdated={ml => onMasteryUpdated(node.id, ml)}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -222,12 +256,18 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'skillNode', masteryLevel: ml }),
       })
-      if (ml === 5) showToast('info', 'Topic mastered! ★★★★★')
+      if (ml >= 5) showToast('info', 'Topic mastered! ★★★★★')
       router.refresh()
     } finally {
       setSaving(false)
     }
   }, [router, showToast])
+
+  const onMasteryUpdated = useCallback((id: string, ml: number) => {
+    // Reflect quiz-driven mastery change locally and refresh server data
+    setSelected(prev => (prev && prev.id === id ? { ...prev, masteryLevel: ml } : prev))
+    router.refresh()
+  }, [router])
 
   const stat = subjectStats.find(s => s.subject === subject)
 
@@ -260,7 +300,9 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />★1-2</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />★3-4</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />★5 Mastered</span>
-          <span className="ml-auto text-gray-700">Click a node to rate it</span>
+          <Link href="/quiz" className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-purple-900/40 border border-purple-800/50 text-purple-300 rounded-lg hover:bg-purple-800/50 transition-colors">
+            <GraduationCap size={12} /> Exam mode
+          </Link>
         </div>
       )}
 
@@ -281,7 +323,7 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
             <Background color="#1f2937" gap={24} size={1} />
             <Controls showInteractive={false} className="!bottom-4 !right-4 !left-auto" />
             <MiniMap
-              nodeColor={n => { const d = n.data as SkillNodeData; return d.masteryLevel===5?'#16a34a':d.masteryLevel>=3?'#7c3aed':d.masteryLevel>=1?'#3b82f6':'#374151' }}
+              nodeColor={n => { const d = n.data as SkillNodeData; return d.masteryLevel>=5?'#16a34a':d.masteryLevel>=3?'#7c3aed':d.masteryLevel>=1?'#3b82f6':'#374151' }}
               maskColor="rgba(0,0,0,0.6)" className="!bg-gray-900 !border-gray-700" />
             <AutoFitView dep={subject} />
           </ReactFlow>
@@ -294,6 +336,7 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
             onRate={handleRate}
             onClose={() => setSelected(null)}
             saving={saving}
+            onMasteryUpdated={onMasteryUpdated}
           />
         )}
       </div>

@@ -1,16 +1,19 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical } from 'lucide-react'
+import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3 } from 'lucide-react'
 
 const links = [
-  { href: '/',           label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/courses',    label: 'Courses',    icon: BookOpen },
-  { href: '/skills',     label: 'Skills',     icon: GitBranch },
-  { href: '/topics',     label: 'Topics',     icon: List },
-  { href: '/schedule',   label: 'Schedule',   icon: Calendar },
-  { href: '/techniques', label: 'Techniques', icon: FlaskConical },
-  { href: '/chat',       label: 'AI Chat',    icon: MessageCircle },
+  { href: '/',               label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/courses',        label: 'Courses',        icon: BookOpen },
+  { href: '/skills',         label: 'Skills',         icon: GitBranch },
+  { href: '/topics',         label: 'Topics',         icon: List },
+  { href: '/learning-paths', label: 'Learning Paths', icon: Route },
+  { href: '/quiz',           label: 'Quiz',           icon: GraduationCap },
+  { href: '/analytics',      label: 'Analytics',      icon: BarChart3 },
+  { href: '/schedule',       label: 'Schedule',       icon: Calendar },
+  { href: '/techniques',     label: 'Techniques',     icon: FlaskConical },
+  { href: '/chat',           label: 'AI Chat',        icon: MessageCircle },
 ]
 
 // Desktop sidebar — fixed left panel, 256px wide

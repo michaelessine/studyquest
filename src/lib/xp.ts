@@ -63,6 +63,7 @@ export const SUBJECTS = [
   'Finance',
   'Economics',
   'QuantumMechanics',
+  'Others',
 ] as const
 
 export type Subject = typeof SUBJECTS[number]
@@ -73,4 +74,5 @@ export const SUBJECT_LABEL: Record<Subject, string> = {
   Finance:          'Finance',
   Economics:        'Economics',
   QuantumMechanics: 'Quantum Mechanics',
+  Others:           'Other Topics',
 }
