@@ -1,26 +1,23 @@
 // StudyQuest Prisma schema — PostgreSQL (Neon)
-// Status fields use plain String so values are enforced at the app layer.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-
-// ─── Models ─────────────────────────────────────────────────────────────────
 
 model Course {
   id        String   @id @default(uuid())
   code      String?
   name      String
-  subject   String   // Mathematics | ComputerScience | Finance | Economics | QuantumMechanics
+  subject   String
   semester  String?
   year      Int?
   status    String   @default("active")    // active | completed | planned
-  grade     Float?   // GPA-scale 0–4.0
+  grade     Float?
   xpAwarded Int      @default(0)
   createdAt DateTime @default(now())
 
@@ -31,12 +28,18 @@ model Course {
 }
 
 model SkillNode {
-  id       String  @id @default(uuid())
-  name     String
-  subject  String
-  status   String  @default("locked")  // locked | unlocked | mastered
-  xpValue  Int     @default(100)
-  courseId String?
+  id                 String    @id @default(uuid())
+  name               String
+  subject            String
+  category           String    @default("")
+  tier               Int       @default(0)
+  status             String    @default("locked")  // locked | unlocked | in_progress | mastered
+  masteryLevel       Int       @default(0)          // 0 = not started, 1-4 = in_progress, 5 = mastered
+  xpValue            Int       @default(100)
+  courseId           String?
+  nextReviewAt       DateTime?
+  reviewIntervalDays Int       @default(1)
+  masteryUpdatedAt   DateTime?
 
   course        Course?           @relation(fields: [courseId], references: [id])
   prerequisites SkillDependency[] @relation("Dependent")
@@ -44,7 +47,6 @@ model SkillNode {
   topics        Topic[]
 }
 
-// Self-join: one prerequisite unlocks one dependent
 model SkillDependency {
   prerequisiteId String
   dependentId    String
@@ -61,7 +63,7 @@ model Topic {
   skillNodeId String?
   title       String
   week        Int     @default(1)
-  status      String  @default("pending")  // pending | done
+  status      String  @default("pending")
   source      String?
 
   course    Course     @relation(fields: [courseId], references: [id])
@@ -72,7 +74,7 @@ model Deadline {
   id        String   @id @default(uuid())
   courseId  String
   title     String
-  type      String   // exam | assignment | quiz | reading
+  type      String
   dueDate   DateTime
   completed Boolean  @default(false)
   xpValue   Int      @default(100)

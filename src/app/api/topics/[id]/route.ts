@@ -1,9 +1,11 @@
 // PATCH /api/topics/[id]
-// type:"skillNode" — update a SkillNode status with cascade-unlock logic
-// (default)        — update a Topic record status
+// type:"skillNode" with masteryLevel → set star rating, cascade-unlock dependents
+// type:"skillNode" with status       → legacy status-only update
+// (default)                          → update a Topic record status
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { checkAndUnlockAchievements } from '@/lib/achievements'
+import { getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
+import { checkAndUnlockDependents } from '@/lib/skillUnlock'
 
 export async function PATCH(
   req: NextRequest,
@@ -11,71 +13,52 @@ export async function PATCH(
 ) {
   const body = await req.json()
 
+  // ── Star rating update ─────────────────────────────────────────────────────
+  if (body.type === 'skillNode' && body.masteryLevel !== undefined) {
+    const ml: number = body.masteryLevel
+    const status = ml === 5 ? 'mastered' : ml >= 1 ? 'in_progress' : await deriveStatus(params.id)
+
+    const reviewFields = ml > 0
+      ? { nextReviewAt: getNextReviewDate(ml), reviewIntervalDays: getReviewIntervalDays(ml) }
+      : {}
+
+    const node = await prisma.skillNode.update({
+      where: { id: params.id },
+      data: { masteryLevel: ml, status, masteryUpdatedAt: new Date(), ...reviewFields },
+    })
+
+    if (ml >= 1) await checkAndUnlockDependents(params.id)
+
+    return NextResponse.json({ node })
+  }
+
+  // ── Legacy status-only update ─────────────────────────────────────────────
   if (body.type === 'skillNode') {
     const node = await prisma.skillNode.update({
       where: { id: params.id },
       data: { status: body.status },
     })
-
-    // When a node is marked done (mastered), unlock any dependents whose
-    // prerequisites are now ALL mastered.
-    if (body.status === 'mastered') {
-      await cascadeUnlock(params.id)
-    }
-
-    const newAchievements = body.status === 'mastered'
-      ? await checkAndUnlockAchievements()
-      : []
-
-    return NextResponse.json({ node, newAchievements })
+    if (body.status === 'mastered') await checkAndUnlockDependents(params.id)
+    return NextResponse.json({ node })
   }
 
-  // Default: Topic record
+  // ── Topic record ──────────────────────────────────────────────────────────
   const topic = await prisma.topic.update({
     where: { id: params.id },
     data: { status: body.status },
   })
-  const newAchievements = body.status === 'done'
-    ? await checkAndUnlockAchievements()
-    : []
-  return NextResponse.json({ topic, newAchievements })
+  return NextResponse.json({ topic })
 }
 
-/**
- * After node `doneId` is mastered, find its dependents and unlock any whose
- * every prerequisite is now mastered.
- */
-async function cascadeUnlock(doneId: string) {
-  // Get all nodes that list doneId as a prerequisite
-  const outgoing = await prisma.skillDependency.findMany({
-    where: { prerequisiteId: doneId },
-    select: { dependentId: true },
+async function deriveStatus(nodeId: string): Promise<string> {
+  const prereqs = await prisma.skillDependency.findMany({
+    where: { dependentId: nodeId },
+    select: { prerequisiteId: true },
   })
-
-  for (const { dependentId } of outgoing) {
-    const dependent = await prisma.skillNode.findUnique({
-      where: { id: dependentId },
-      select: { status: true },
-    })
-    if (!dependent || dependent.status !== 'locked') continue
-
-    // Check all prerequisites of this dependent
-    const prereqs = await prisma.skillDependency.findMany({
-      where: { dependentId },
-      select: { prerequisiteId: true },
-    })
-
-    const prereqNodes = await prisma.skillNode.findMany({
-      where: { id: { in: prereqs.map(p => p.prerequisiteId) } },
-      select: { status: true },
-    })
-
-    const allDone = prereqNodes.every(n => n.status === 'mastered')
-    if (allDone) {
-      await prisma.skillNode.update({
-        where: { id: dependentId },
-        data: { status: 'unlocked' },
-      })
-    }
-  }
+  if (prereqs.length === 0) return 'unlocked'
+  const prereqNodes = await prisma.skillNode.findMany({
+    where: { id: { in: prereqs.map(p => p.prerequisiteId) } },
+    select: { masteryLevel: true },
+  })
+  return prereqNodes.every(n => n.masteryLevel >= 1) ? 'unlocked' : 'locked'
 }

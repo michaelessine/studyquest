@@ -27,7 +27,7 @@ export default function AddCourseModal() {
   const [form, setForm] = useState({
     code: '', name: '', subject: 'Mathematics',
     semester: '', year: new Date().getFullYear().toString(),
-    status: 'active', grade: '',
+    status: 'active',
   })
 
   // ── PDF upload state ────────────────────────────────────────────────────
@@ -44,7 +44,6 @@ export default function AddCourseModal() {
         body: JSON.stringify({
           ...form,
           year: form.year ? parseInt(form.year) : null,
-          grade: form.grade ? parseFloat(form.grade) : null,
         }),
       })
       if (!res.ok) throw new Error(await res.text())
@@ -127,24 +126,13 @@ export default function AddCourseModal() {
               {/* ── Manual form ──────────────────────────────────────────── */}
               {tab === 'manual' && (
                 <form onSubmit={submitManual} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Code (optional)</label>
-                      <input
-                        value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
-                        placeholder="CS 201"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Grade (GPA)</label>
-                      <input
-                        value={form.grade} onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
-                        placeholder="3.7"
-                        type="number" min="0" max="4" step="0.1"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
-                      />
-                    </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Code (optional)</label>
+                    <input
+                      value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+                      placeholder="CS 201"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                    />
                   </div>
 
                   <div>

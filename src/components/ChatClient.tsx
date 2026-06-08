@@ -3,7 +3,7 @@
 // parses <actions> tags from the response, and applies them server-side.
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader2, Zap, CheckCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useToast } from './ToastProvider'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -35,9 +35,10 @@ function MessageContent({ text }: { text: string }) {
 
 export default function ChatClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { showToast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput]       = useState('')
+  const [input, setInput]       = useState(searchParams.get('prefill') ?? '')
   const [streaming, setStreaming] = useState(false)
   const [appliedActions, setAppliedActions] = useState<string[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)

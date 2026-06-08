@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "SkillNode" ADD COLUMN     "category" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "masteryLevel" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "masteryUpdatedAt" TIMESTAMP(3),
+ADD COLUMN     "nextReviewAt" TIMESTAMP(3),
+ADD COLUMN     "reviewIntervalDays" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "tier" INTEGER NOT NULL DEFAULT 0;

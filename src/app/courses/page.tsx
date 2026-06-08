@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import AddCourseModal from '@/components/AddCourseModal'
 import Link from 'next/link'
-import { BookOpen, GraduationCap, ChevronRight } from 'lucide-react'
+import { BookOpen, ChevronRight } from 'lucide-react'
 
 // Status badge styling
 function statusStyle(status: string) {
@@ -83,11 +83,6 @@ export default async function CoursesPage() {
                     <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                       {course.semester && course.year && (
                         <span>{course.semester} {course.year}</span>
-                      )}
-                      {course.grade != null && (
-                        <span className="text-purple-400 font-semibold flex items-center gap-1">
-                          <GraduationCap size={12} /> {course.grade.toFixed(1)}
-                        </span>
                       )}
                     </div>
 

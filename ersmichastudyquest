@@ -1,0 +1,48 @@
+[33mcommit 88a3c8e6c54efcd4c8231f8d02a2032ec2503c39[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Michael Essine <michael.essine@gmail.com>
+Date:   Mon Jun 8 09:19:11 2026 +0300
+
+    Initial commit — StudyQuest
+
+.claude/settings.local.json
+.eslintrc.json
+.gitignore
+next-env.d.ts
+next.config.mjs
+package-lock.json
+package.json
+postcss.config.mjs
+prisma/prisma/dev.db
+prisma/schema.prisma
+prisma/seed.ts
+src/app/api/actions/route.ts
+src/app/api/chat/route.ts
+src/app/api/courses/route.ts
+src/app/api/deadlines/[id]/route.ts
+src/app/api/deadlines/route.ts
+src/app/api/parse-transcript/route.ts
+src/app/api/sessions/route.ts
+src/app/api/topics/[id]/route.ts
+src/app/chat/page.tsx
+src/app/courses/page.tsx
+src/app/globals.css
+src/app/layout.tsx
+src/app/page.tsx
+src/app/schedule/page.tsx
+src/app/skills/page.tsx
+src/app/topics/page.tsx
+src/components/AddCourseModal.tsx
+src/components/BottomNav.tsx
+src/components/ChatClient.tsx
+src/components/ClientProviders.tsx
+src/components/Nav.tsx
+src/components/SkillTreeClient.tsx
+src/components/ToastProvider.tsx
+src/components/TopicsClient.tsx
+src/lib/achievements.ts
+src/lib/prisma.ts
+src/lib/xp.ts
+tailwind.config.ts
+tsconfig.json
+tsconfig.tsbuildinfo
+vercel.json

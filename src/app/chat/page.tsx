@@ -1,4 +1,4 @@
-// AI Chat page — thin server shell; actual chat is a client component
+import { Suspense } from 'react'
 import ChatClient from '@/components/ChatClient'
 
 export default function ChatPage() {
@@ -10,7 +10,9 @@ export default function ChatPage() {
           Your AI study assistant — aware of your courses, skills, and deadlines.
         </p>
       </div>
-      <ChatClient />
+      <Suspense>
+        <ChatClient />
+      </Suspense>
     </div>
   )
 }
