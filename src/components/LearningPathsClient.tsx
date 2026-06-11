@@ -19,7 +19,7 @@ interface Props {
 
 function MasteryBar({ level }: { level: number }) {
   const pct = (level / 5) * 100
-  const color = level >= 5 ? 'bg-green-500' : level >= 3 ? 'bg-purple-500' : level >= 1 ? 'bg-blue-500' : 'bg-gray-600'
+  const color = level >= 5 ? 'bg-green-500' : level >= 3 ? 'bg-orange-500' : level >= 1 ? 'bg-blue-500' : 'bg-gray-600'
   return (
     <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden w-24">
       <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
@@ -116,7 +116,7 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
           <p className="text-sm text-gray-500 mt-0.5">AI-generated study roadmaps toward your goals.</p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded-lg transition-colors">
+          className="flex items-center gap-2 px-3 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors">
           <Plus size={15} /> New path
         </button>
       </div>
@@ -134,18 +134,18 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
           const completed = path.topics.filter(t => (nodeMap[t]?.masteryLevel ?? 0) >= 5).length
           const pct = path.topics.length > 0 ? Math.round((completed / path.topics.length) * 100) : 0
           return (
-            <div key={path.id} className={`card p-5 ${path.pinned ? 'border-purple-700/60' : ''}`}>
+            <div key={path.id} className={`card p-5 ${path.pinned ? 'border-orange-700/60' : ''}`}>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h2 className="font-semibold text-gray-100">{path.name}</h2>
-                    {path.pinned && <span className="text-[10px] px-2 py-0.5 bg-purple-900/50 border border-purple-700 rounded text-purple-300">Pinned</span>}
+                    {path.pinned && <span className="text-[10px] px-2 py-0.5 bg-orange-900/50 border border-orange-700 rounded text-orange-300">Pinned</span>}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">{SUBJECT_LABEL[path.subject as Subject] ?? path.subject} · {path.topics.length} topics · ~{totalHours}h · {pct}% complete</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => togglePin(path)} title={path.pinned ? 'Unpin' : 'Pin to dashboard'}
-                    className="p-1.5 text-gray-500 hover:text-purple-400 transition-colors">
+                    className="p-1.5 text-gray-500 hover:text-orange-400 transition-colors">
                     {path.pinned ? <PinOff size={15} /> : <Pin size={15} />}
                   </button>
                   <button onClick={() => deletePath(path.id)} title="Delete"
@@ -157,7 +157,7 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
 
               {/* Progress bar */}
               <div className="h-2 bg-gray-800 rounded-full overflow-hidden mb-4">
-                <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full" style={{ width: `${pct}%` }} />
+                <div className="h-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full" style={{ width: `${pct}%` }} />
               </div>
 
               {warnings[path.id]?.length > 0 && (
@@ -175,7 +175,7 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
                   const hours = path.estimatedHours[topicId] ?? 0
                   const isNext = node.masteryLevel < 5 && path.topics.slice(0, i).every(t => (nodeMap[t]?.masteryLevel ?? 0) >= 5)
                   return (
-                    <div key={topicId} className={`flex items-center gap-3 rounded-lg p-3 border ${isNext ? 'bg-purple-950/30 border-purple-800/50' : 'bg-gray-800/40 border-gray-700/40'}`}>
+                    <div key={topicId} className={`flex items-center gap-3 rounded-lg p-3 border ${isNext ? 'bg-orange-950/30 border-orange-800/50' : 'bg-gray-800/40 border-gray-700/40'}`}>
                       <div className="flex flex-col gap-0.5 shrink-0">
                         <button onClick={() => reorder(path, i, -1)} disabled={i === 0} className="text-gray-600 hover:text-gray-300 disabled:opacity-30"><ChevronUp size={12} /></button>
                         <button onClick={() => reorder(path, i, 1)} disabled={i === path.topics.length - 1} className="text-gray-600 hover:text-gray-300 disabled:opacity-30"><ChevronDown size={12} /></button>
@@ -184,7 +184,7 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-gray-200 truncate flex items-center gap-2">
                           {node.name}
-                          {isNext && <span className="text-[9px] px-1.5 py-0.5 bg-purple-700 text-white rounded">NEXT</span>}
+                          {isNext && <span className="text-[9px] px-1.5 py-0.5 bg-orange-700 text-white rounded">NEXT</span>}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <MasteryBar level={node.masteryLevel} />
@@ -192,7 +192,7 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
                         </div>
                       </div>
                       <Link href={`/topics?subject=${node.subject}`}
-                        className="text-[10px] px-2.5 py-1 bg-purple-900/40 border border-purple-800/50 text-purple-300 rounded hover:bg-purple-800/50 transition-colors shrink-0 flex items-center gap-1">
+                        className="text-[10px] px-2.5 py-1 bg-orange-900/40 border border-orange-800/50 text-orange-300 rounded hover:bg-orange-800/50 transition-colors shrink-0 flex items-center gap-1">
                         <BookOpen size={10} /> Study
                       </Link>
                       <button onClick={() => removeTopic(path, topicId)} className="text-gray-600 hover:text-red-400 shrink-0"><X size={13} /></button>
@@ -218,24 +218,24 @@ export default function LearningPathsClient({ initialPaths, nodeMap }: Props) {
               <label className="text-xs text-gray-500 mb-1 block">What&apos;s your goal?</label>
               <input value={goal} onChange={e => setGoal(e.target.value)}
                 placeholder="e.g. master machine learning"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Subject</label>
                 <select value={subject} onChange={e => setSubject(e.target.value as Subject)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600">
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
                   {SUBJECTS.map(s => <option key={s} value={s}>{SUBJECT_LABEL[s]}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Weeks available</label>
                 <input type="number" value={weeks} onChange={e => setWeeks(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
               </div>
             </div>
             <button onClick={generatePath} disabled={!goal.trim() || generating}
-              className="w-full py-2.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white text-sm rounded-lg flex items-center justify-center gap-2">
+              className="w-full py-2.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white text-sm rounded-lg flex items-center justify-center gap-2">
               {generating ? <><Loader2 size={15} className="animate-spin" /> Generating path…</> : 'Generate Path'}
             </button>
           </div>

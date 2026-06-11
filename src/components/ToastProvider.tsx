@@ -23,7 +23,7 @@ export function useToast() {
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const cfg = {
-    xp:          { icon: <Zap size={15} />,     border: 'border-purple-600/60', bg: 'bg-purple-950/95', accent: 'text-purple-300' },
+    xp:          { icon: <Zap size={15} />,     border: 'border-orange-600/60', bg: 'bg-orange-950/95', accent: 'text-orange-300' },
     achievement: { icon: <Trophy size={15} />,   border: 'border-yellow-500/60', bg: 'bg-yellow-950/95', accent: 'text-yellow-300' },
     info:        { icon: <Info size={15} />,      border: 'border-gray-600/60',  bg: 'bg-gray-900/95',   accent: 'text-gray-300'  },
   }[toast.type]

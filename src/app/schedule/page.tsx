@@ -144,7 +144,7 @@ export default function SchedulePage() {
             <ChevronRight size={16} />
           </button>
           <button onClick={() => setShowDl(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded-lg">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg">
             <Plus size={14} /> Deadline
           </button>
           <button onClick={() => setShowLog(true)}
@@ -156,7 +156,7 @@ export default function SchedulePage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="animate-spin text-purple-500" size={28} />
+          <Loader2 className="animate-spin text-orange-500" size={28} />
         </div>
       ) : (
         <>
@@ -171,13 +171,13 @@ export default function SchedulePage() {
                 <div
                   key={day.toISOString()}
                   className={`rounded-xl border p-2 min-h-32 flex flex-col gap-1.5 ${
-                    isToday ? 'border-purple-700 bg-purple-950/30' : 'border-gray-800 bg-gray-900/50'
+                    isToday ? 'border-orange-700 bg-orange-950/30' : 'border-gray-800 bg-gray-900/50'
                   }`}
                 >
                   {/* Day header */}
                   <div className="text-center mb-1">
                     <div className="text-xs text-gray-500">{format(day, 'EEE')}</div>
-                    <div className={`text-sm font-semibold ${isToday ? 'text-purple-300' : 'text-gray-300'}`}>
+                    <div className={`text-sm font-semibold ${isToday ? 'text-orange-300' : 'text-gray-300'}`}>
                       {format(day, 'd')}
                     </div>
                   </div>
@@ -219,7 +219,7 @@ export default function SchedulePage() {
           {/* ── This Week summary ──────────────────────────────────────── */}
           <div className="card p-5">
             <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2">
-              <CalendarDays size={15} className="text-purple-400" />
+              <CalendarDays size={15} className="text-orange-400" />
               This Week
             </h2>
 
@@ -228,7 +228,7 @@ export default function SchedulePage() {
                 <p className="text-sm text-gray-500">No sessions logged yet this week — start one!</p>
                 <button
                   onClick={() => setShowLog(true)}
-                  className="px-4 py-1.5 text-xs border border-purple-700/60 text-purple-400 hover:bg-purple-900/30 rounded-lg transition-colors"
+                  className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors"
                 >
                   + Log Session
                 </button>
@@ -239,7 +239,7 @@ export default function SchedulePage() {
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
                     <Clock size={12} /> Study time
                   </div>
-                  <div className="text-2xl font-bold text-purple-300">{studyLabel}</div>
+                  <div className="text-2xl font-bold text-orange-300">{studyLabel}</div>
                   <div className="text-xs text-gray-600">{weekSessions.length} session{weekSessions.length !== 1 ? 's' : ''}</div>
                 </div>
 
@@ -282,20 +282,20 @@ export default function SchedulePage() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Duration (minutes)</label>
               <input type="number" value={logMins} onChange={e => setLogMins(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Notes</label>
               <textarea value={logNote} onChange={e => setLogNote(e.target.value)}
                 placeholder="What did you study?" rows={3}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600 resize-none" />
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600 resize-none" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowLog(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">
                 Cancel
               </button>
               <button onClick={saveSession} disabled={!logNote || logSaving}
-                className="flex-1 py-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2">
+                className="flex-1 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2">
                 {logSaving ? <Loader2 size={14} className="animate-spin" /> : null}
                 Save
               </button>
@@ -313,40 +313,40 @@ export default function SchedulePage() {
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Title</label>
               <input value={dlTitle} onChange={e => setDlTitle(e.target.value)} placeholder="Midterm Exam"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Type</label>
                 <select value={dlType} onChange={e => setDlType(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600">
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
                   <option>exam</option><option>assignment</option><option>quiz</option><option>reading</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">XP Value</label>
                 <input type="number" value={dlXP} onChange={e => setDlXP(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
               </div>
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Course</label>
               <select value={dlCourse} onChange={e => setDlCourse(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600">
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
                 {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
               <input type="date" value={dlDate} onChange={e => setDlDate(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowDl(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">
                 Cancel
               </button>
               <button onClick={saveDeadline} disabled={!dlTitle || !dlDate || !dlCourse || dlSaving}
-                className="flex-1 py-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2">
+                className="flex-1 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2">
                 {dlSaving ? <Loader2 size={14} className="animate-spin" /> : null}
                 Add
               </button>

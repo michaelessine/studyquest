@@ -30,10 +30,10 @@ export default function Nav() {
     <nav className="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-gray-900/95 backdrop-blur border-r border-gray-800 p-4 z-40">
       {/* Brand */}
       <div className="flex items-center gap-2.5 mb-8 px-2 mt-2">
-        <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center">
           <Zap size={16} className="text-white" />
         </div>
-        <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
+        <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-orange-200 bg-clip-text text-transparent">
           StudyQuest
         </span>
       </div>
@@ -48,13 +48,13 @@ export default function Nav() {
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${
                 active
-                  ? 'bg-purple-900/50 text-purple-300 border border-purple-700/50 shadow-[0_0_12px_rgba(124,58,237,0.15)]'
+                  ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50 shadow-[0_0_12px_rgba(234,88,12,0.15)]'
                   : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
               }`}
             >
               <Icon size={18} />
               <span className="text-sm font-medium">{label}</span>
-              {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400" />}
+              {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
             </Link>
           )
         })}
@@ -63,7 +63,7 @@ export default function Nav() {
       {/* User identity */}
       <div className="mt-auto px-1 pb-2">
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-gray-800/50 border border-gray-700/40">
-          <div className="w-8 h-8 rounded-full bg-purple-800/70 border border-purple-700/50 flex items-center justify-center text-xs font-bold text-purple-200 shrink-0 select-none">
+          <div className="w-8 h-8 rounded-full bg-orange-800/70 border border-orange-700/50 flex items-center justify-center text-xs font-bold text-orange-200 shrink-0 select-none">
             ME
           </div>
           <div className="min-w-0">

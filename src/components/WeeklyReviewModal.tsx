@@ -39,7 +39,7 @@ export default function WeeklyReviewModal({ onClose }: Props) {
       <div className="relative bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-100 flex items-center gap-2">
-            <Sparkles size={16} className="text-purple-400" />
+            <Sparkles size={16} className="text-orange-400" />
             Weekly Review
           </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X size={16} /></button>
@@ -53,7 +53,7 @@ export default function WeeklyReviewModal({ onClose }: Props) {
               onChange={e => setText(e.target.value)}
               placeholder="e.g. I finished the Real Analysis lecture series and started Stochastic Processes. Struggled a bit with measure theory..."
               rows={5}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-purple-600 resize-none"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-orange-600 resize-none"
             />
             {error && <p className="text-xs text-red-400">{error}</p>}
             <div className="flex gap-2">
@@ -63,7 +63,7 @@ export default function WeeklyReviewModal({ onClose }: Props) {
               <button
                 onClick={submit}
                 disabled={!text.trim() || loading}
-                className="flex-1 py-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2"
+                className="flex-1 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 Get Review
@@ -75,7 +75,7 @@ export default function WeeklyReviewModal({ onClose }: Props) {
             <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
               {response}
             </div>
-            <button onClick={onClose} className="w-full py-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm text-white">
+            <button onClick={onClose} className="w-full py-2 bg-orange-700 hover:bg-orange-600 rounded-lg text-sm text-white">
               Done
             </button>
           </>

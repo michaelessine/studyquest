@@ -37,7 +37,7 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
-  if (loading) return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-purple-500" /></div>
+  if (loading) return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-orange-500" /></div>
   if (!data) return <div className="p-8 text-center text-gray-500">Failed to load.</div>
 
   return (
@@ -61,9 +61,9 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card p-5">
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><DollarSign size={13} /> Est. monthly spend</div>
-          <div className="text-3xl font-black text-purple-400">${data.estimatedMonthly.toFixed(3)}</div>
+          <div className="text-3xl font-black text-orange-400">${data.estimatedMonthly.toFixed(3)}</div>
           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mt-2">
-            <div className={`h-full rounded-full ${data.cap.overCap ? 'bg-red-500' : 'bg-violet-500'}`} style={{ width: `${Math.min(100, data.cap.pctUsed)}%` }} />
+            <div className={`h-full rounded-full ${data.cap.overCap ? 'bg-red-500' : 'bg-orange-500'}`} style={{ width: `${Math.min(100, data.cap.pctUsed)}%` }} />
           </div>
           <div className="text-xs text-gray-600 mt-1">{data.cap.pctUsed}% of ${data.cap.cap} cap</div>
         </div>
@@ -97,7 +97,7 @@ export default function SettingsPage() {
                 <span className="col-span-5 text-gray-300 font-mono truncate">{r.route}</span>
                 <span className="col-span-2 text-right text-gray-400">{r.calls}</span>
                 <span className="col-span-2 text-right text-green-400">{r.cacheHits}</span>
-                <span className="col-span-3 text-right text-purple-400 font-semibold">${r.cost.toFixed(4)}</span>
+                <span className="col-span-3 text-right text-orange-400 font-semibold">${r.cost.toFixed(4)}</span>
               </div>
             ))}
           </div>
@@ -112,10 +112,10 @@ export default function SettingsPage() {
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
             <input type="number" step="0.5" min="0" value={capInput} onChange={e => setCapInput(e.target.value)}
-              className="w-32 bg-gray-800 border border-gray-700 rounded-lg pl-6 pr-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600" />
+              className="w-32 bg-gray-800 border border-gray-700 rounded-lg pl-6 pr-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
           </div>
           <button onClick={saveCap} disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white text-sm rounded-lg">
+            className="flex items-center gap-1.5 px-4 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white text-sm rounded-lg">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
           </button>
         </div>

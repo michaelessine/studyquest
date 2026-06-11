@@ -26,7 +26,7 @@ function masteryLabel(ml: number): string {
 
 function masteryColor(ml: number): string {
   if (ml >= 5)  return 'text-green-400'
-  if (ml >= 3)  return 'text-purple-400'
+  if (ml >= 3)  return 'text-orange-400'
   if (ml >= 1)  return 'text-blue-400'
   return 'text-gray-500'
 }

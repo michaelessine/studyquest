@@ -81,7 +81,7 @@ export default function AddCourseModal() {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => { setOpen(true); setTab('manual') }}
-          className="flex items-center gap-2 px-3 py-2 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
         >
           <Plus size={15} /> Add Course
         </button>
@@ -114,7 +114,7 @@ export default function AddCourseModal() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                    tab === t ? 'text-purple-400 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-300'
+                    tab === t ? 'text-orange-400 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-300'
                   }`}
                 >
                   {t === 'manual' ? 'Manual Entry' : 'Upload PDF'}
@@ -131,7 +131,7 @@ export default function AddCourseModal() {
                     <input
                       value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
                       placeholder="CS 201"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                     />
                   </div>
 
@@ -141,7 +141,7 @@ export default function AddCourseModal() {
                       required value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                       placeholder="Linear Algebra"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                     />
                   </div>
 
@@ -149,7 +149,7 @@ export default function AddCourseModal() {
                     <label className="text-xs text-gray-500 mb-1 block">Subject *</label>
                     <select
                       value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                     >
                       {SUBJECTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
@@ -160,7 +160,7 @@ export default function AddCourseModal() {
                       <label className="text-xs text-gray-500 mb-1 block">Status *</label>
                       <select
                         value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                       >
                         <option value="active">Active</option>
                         <option value="completed">Completed</option>
@@ -171,7 +171,7 @@ export default function AddCourseModal() {
                       <label className="text-xs text-gray-500 mb-1 block">Semester</label>
                       <select
                         value={form.semester} onChange={e => setForm(f => ({ ...f, semester: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                       >
                         <option value="">—</option>
                         <option>Fall</option>
@@ -185,7 +185,7 @@ export default function AddCourseModal() {
                       <input
                         value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
                         type="number" placeholder="2025"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-600"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
                       />
                     </div>
                   </div>
@@ -194,7 +194,7 @@ export default function AddCourseModal() {
 
                   <button
                     type="submit" disabled={loading}
-                    className="w-full mt-1 py-2.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-1 py-2.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : success ? <CheckCircle2 size={16} /> : <Plus size={16} />}
                     {loading ? 'Adding...' : success ? 'Added!' : 'Add Course'}
@@ -211,11 +211,11 @@ export default function AddCourseModal() {
 
                   <label className="block cursor-pointer">
                     <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                      file ? 'border-purple-600 bg-purple-900/20' : 'border-gray-700 hover:border-gray-600'
+                      file ? 'border-orange-600 bg-orange-900/20' : 'border-gray-700 hover:border-gray-600'
                     }`}>
                       <Upload size={28} className="mx-auto mb-2 text-gray-500" />
                       {file ? (
-                        <p className="text-sm text-purple-300 font-medium">{file.name}</p>
+                        <p className="text-sm text-orange-300 font-medium">{file.name}</p>
                       ) : (
                         <>
                           <p className="text-sm text-gray-400">Click to select a PDF</p>
@@ -234,7 +234,7 @@ export default function AddCourseModal() {
 
                   <button
                     type="submit" disabled={!file || loading}
-                    className="w-full py-2.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                     {loading ? 'Parsing with AI...' : 'Upload & Import'}

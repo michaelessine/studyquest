@@ -41,7 +41,7 @@ function ResourceLinks({ name }: { name: string }) {
     {
       label: 'Papers',
       links: [
-        { label: 'arXiv',          url: `https://arxiv.org/search/?query=${q}&searchtype=all`, color: 'text-purple-400 hover:text-purple-300' },
+        { label: 'arXiv',          url: `https://arxiv.org/search/?query=${q}&searchtype=all`, color: 'text-orange-400 hover:text-orange-300' },
         { label: 'Google Scholar', url: `https://scholar.google.com/scholar?q=${q}`, color: 'text-sky-400 hover:text-sky-300' },
       ],
     },
@@ -76,9 +76,9 @@ function ResourceLinks({ name }: { name: string }) {
 // ── Mastery → card style ──────────────────────────────────────────────────────
 function cardStyle(status: string, ml: number) {
   if (ml >= 5) return 'bg-green-950/20 border-green-900/40'
-  if (ml >= 3) return 'bg-purple-950/20 border-purple-900/40'
+  if (ml >= 3) return 'bg-orange-950/20 border-orange-900/40'
   if (ml >= 1) return 'bg-blue-950/20 border-blue-900/30'
-  if (status === 'unlocked') return 'bg-gray-900 border-gray-700 hover:border-purple-700/50'
+  if (status === 'unlocked') return 'bg-gray-900 border-gray-700 hover:border-orange-700/50'
   return 'bg-gray-900/50 border-gray-800 opacity-60'
 }
 
@@ -225,7 +225,7 @@ export default function TopicsClient({ nodes }: Props) {
             return (
               <button key={s} onClick={() => setSubject(s)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 ${
-                  active ? 'bg-purple-900/60 border border-purple-700 text-purple-300'
+                  active ? 'bg-orange-900/60 border border-orange-700 text-orange-300'
                          : 'bg-gray-800/60 border border-gray-700 text-gray-400 hover:text-gray-200'
                 }`}>
                 {SUBJECT_LABEL[s]}
@@ -250,7 +250,7 @@ export default function TopicsClient({ nodes }: Props) {
           return (
             <section key={cat} className="w-full">
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs font-bold uppercase tracking-widest text-purple-400 shrink-0">{cat}</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-orange-400 shrink-0">{cat}</span>
                 <div className="flex-1 h-px bg-gray-800" />
                 <span className="text-xs text-gray-600 shrink-0">{rated}/{catNodes.length} rated</span>
               </div>

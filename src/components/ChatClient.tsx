@@ -143,8 +143,8 @@ export default function ChatClient() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-16">
-            <div className="w-14 h-14 rounded-2xl bg-purple-900/50 border border-purple-700 flex items-center justify-center">
-              <Bot size={26} className="text-purple-400" />
+            <div className="w-14 h-14 rounded-2xl bg-orange-900/50 border border-orange-700 flex items-center justify-center">
+              <Bot size={26} className="text-orange-400" />
             </div>
             <div>
               <p className="text-gray-300 font-medium">Your AI Study Assistant</p>
@@ -177,17 +177,17 @@ export default function ChatClient() {
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
             {/* Avatar */}
             <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-              msg.role === 'user' ? 'bg-purple-800' : 'bg-gray-800'
+              msg.role === 'user' ? 'bg-orange-800' : 'bg-gray-800'
             }`}>
               {msg.role === 'user'
-                ? <User size={14} className="text-purple-300" />
+                ? <User size={14} className="text-orange-300" />
                 : <Bot size={14} className="text-gray-400" />}
             </div>
 
             {/* Bubble */}
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
               msg.role === 'user'
-                ? 'bg-purple-900/60 border border-purple-800 text-purple-100 text-sm'
+                ? 'bg-orange-900/60 border border-orange-800 text-orange-100 text-sm'
                 : 'bg-gray-900 border border-gray-800'
             }`}>
               {msg.role === 'assistant' ? (
@@ -222,7 +222,7 @@ export default function ChatClient() {
             placeholder="Ask anything about your studies... (Enter to send)"
             rows={1}
             style={{ resize: 'none', minHeight: '44px', maxHeight: '120px' }}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-600 transition-colors"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-600 transition-colors"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -232,7 +232,7 @@ export default function ChatClient() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || streaming}
-            className="shrink-0 w-11 h-11 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 rounded-xl flex items-center justify-center transition-colors"
+            className="shrink-0 w-11 h-11 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 rounded-xl flex items-center justify-center transition-colors"
           >
             {streaming
               ? <Loader2 size={18} className="animate-spin text-white" />

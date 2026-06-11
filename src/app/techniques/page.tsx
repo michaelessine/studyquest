@@ -41,7 +41,7 @@ export default function TechniquesPage() {
                 <span className="text-[10px] text-gray-600">Best for: <span className="text-gray-400">{t.bestFor}</span></span>
                 <Link
                   href={`/chat?prefill=${encodeURIComponent(`How do I apply the ${t.name} technique to my current studies?`)}`}
-                  className="text-[10px] px-2.5 py-1 bg-purple-900/40 border border-purple-800/50 text-purple-300 hover:bg-purple-800/50 rounded transition-colors"
+                  className="text-[10px] px-2.5 py-1 bg-orange-900/40 border border-orange-800/50 text-orange-300 hover:bg-orange-800/50 rounded transition-colors"
                 >
                   How to apply →
                 </Link>

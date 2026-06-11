@@ -14,7 +14,7 @@ type AbilityDef = {
 const ABILITIES: AbilityDef[] = [
   {
     key: 'neuro', scoreField: 'neuroplasticityScore',
-    title: 'Neuroplasticity', icon: <Brain size={16} className="text-purple-400" />,
+    title: 'Neuroplasticity', icon: <Brain size={16} className="text-orange-400" />,
     info: "Neuroplasticity is your brain's ability to form new connections. Strong neuroplasticity lets you learn faster and recover from setbacks.",
     tips: ['Challenge yourself with novel topics', 'Learn multiple ways (multimodal)', 'Embrace mistakes as learning', 'Sleep 7-9 hours for consolidation', 'Exercise boosts BDNF (brain-derived neurotrophic factor)', 'Meditation increases gray matter'],
     habits: 'Weekly: try a new topic | Daily: 20-min meditation | 3x/week: 30-min exercise',
@@ -62,9 +62,9 @@ function AbilityCard({ def, score, onChange }: { def: AbilityDef; score: number;
           <p className="text-xs text-gray-500 mt-0.5">{def.info}</p>
           <div className="mt-3">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Self-rating</span><span className="text-purple-300 font-semibold">{score}/10</span>
+              <span>Self-rating</span><span className="text-orange-300 font-semibold">{score}/10</span>
             </div>
-            <input type="range" min={1} max={10} value={score} onChange={e => onChange(parseInt(e.target.value))} className="w-full accent-purple-600" />
+            <input type="range" min={1} max={10} value={score} onChange={e => onChange(parseInt(e.target.value))} className="w-full accent-orange-600" />
           </div>
           <button onClick={() => setOpen(o => !o)} className="mt-3 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
             {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Tips, habits & what to avoid
@@ -129,7 +129,7 @@ export default function LearningAbilityPage() {
     await fetch('/api/self-improvement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) })
   }, [])
 
-  if (loading) return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-purple-500" /></div>
+  if (loading) return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-orange-500" /></div>
 
   // Overall recommendation
   const { focusScore, recoveryScore, mentalHealthScore } = ability
@@ -153,8 +153,8 @@ export default function LearningAbilityPage() {
         {ABILITIES.map(def => (
           <AbilityCard key={def.key} def={def} score={ability[def.scoreField]} onChange={v => setScore(def.scoreField, v)} />
         ))}
-        <div className="card p-5 border-purple-700/40">
-          <h3 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Sparkles size={15} className="text-purple-400" /> Neuroplasticity System</h3>
+        <div className="card p-5 border-orange-700/40">
+          <h3 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Sparkles size={15} className="text-orange-400" /> Neuroplasticity System</h3>
           <p className="text-sm text-gray-400">{recommendation}</p>
         </div>
       </section>
@@ -165,7 +165,7 @@ export default function LearningAbilityPage() {
 
         {/* Books */}
         <div className="card p-5">
-          <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2"><BookOpen size={15} className="text-purple-400" /> Books</h3>
+          <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2"><BookOpen size={15} className="text-orange-400" /> Books</h3>
           {goals.books.length > 0 && <p className="text-xs text-gray-500 mb-3">You&apos;ve read {booksRead} of {goals.books.length} planned books. Keep going!</p>}
           <div className="space-y-2 mb-3">
             {goals.books.map((b, i) => (
@@ -177,19 +177,19 @@ export default function LearningAbilityPage() {
                 <div className="flex items-center gap-2 mt-2">
                   <input type="range" min={0} max={100} step={5} value={b.progress}
                     onChange={e => { const books = [...goals.books]; books[i] = { ...b, progress: parseInt(e.target.value) }; saveGoals({ ...goals, books }) }}
-                    className="flex-1 accent-purple-600" />
-                  <span className="text-xs text-purple-300 w-10 text-right">{b.progress}%</span>
+                    className="flex-1 accent-orange-600" />
+                  <span className="text-xs text-orange-300 w-10 text-right">{b.progress}%</span>
                 </div>
               </div>
             ))}
           </div>
           <div className="flex gap-2">
             <input value={newBook.title} onChange={e => setNewBook(b => ({ ...b, title: e.target.value }))} placeholder="Title"
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-600" />
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
             <input value={newBook.author} onChange={e => setNewBook(b => ({ ...b, author: e.target.value }))} placeholder="Author"
-              className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-600" />
+              className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
             <button onClick={() => { if (!newBook.title.trim()) return; saveGoals({ ...goals, books: [...goals.books, { title: newBook.title, author: newBook.author, progress: 0 }] }); setNewBook({ title: '', author: '' }) }}
-              className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
+              className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
           </div>
         </div>
 
@@ -211,9 +211,9 @@ export default function LearningAbilityPage() {
           </div>
           <div className="flex gap-2">
             <input value={newHabit} onChange={e => setNewHabit(e.target.value)} placeholder="e.g. Cold showers, no phone before 9am"
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-600" />
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
             <button onClick={() => { if (!newHabit.trim()) return; saveGoals({ ...goals, disciplineHabits: [...goals.disciplineHabits, { name: newHabit, streak: 0 }] }); setNewHabit('') }}
-              className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
+              className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
           </div>
         </div>
 
@@ -234,9 +234,9 @@ export default function LearningAbilityPage() {
             </div>
             <div className="flex gap-2">
               <input value={sec.val} onChange={e => sec.setVal(e.target.value)} placeholder={sec.placeholder}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-600" />
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
               <button onClick={() => { if (!sec.val.trim()) return; saveGoals({ ...goals, [sec.key]: [...sec.items, sec.val] }); sec.setVal('') }}
-                className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
+                className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
             </div>
           </div>
         ))}

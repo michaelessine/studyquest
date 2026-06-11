@@ -93,7 +93,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
   if (phase === 'loading') {
     return (
       <div className="flex flex-col items-center gap-3 py-16">
-        <Loader2 size={28} className="animate-spin text-purple-500" />
+        <Loader2 size={28} className="animate-spin text-orange-500" />
         <span className="text-sm text-gray-500">Generating 20-question {SUBJECT_LABEL[examSubject as Subject]} exam…</span>
       </div>
     )
@@ -112,7 +112,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
             <span>{pct}%</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-purple-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-orange-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
         <p className="text-base text-gray-100 leading-snug">{q.question}</p>
@@ -121,7 +121,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
             {q.options?.map(opt => (
               <button key={opt} onClick={() => setAnswers(a => ({ ...a, [q.id]: opt }))}
                 className={`w-full text-left px-4 py-3 rounded-lg text-sm border transition-colors ${
-                  answers[q.id] === opt ? 'bg-purple-900/50 border-purple-700 text-purple-200' : 'bg-gray-800/60 border-gray-700 text-gray-300 hover:border-gray-600'
+                  answers[q.id] === opt ? 'bg-orange-900/50 border-orange-700 text-orange-200' : 'bg-gray-800/60 border-gray-700 text-gray-300 hover:border-gray-600'
                 }`}>
                 {opt}
               </button>
@@ -130,7 +130,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
         ) : (
           <textarea value={answers[q.id] ?? ''} onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
             placeholder="Write your answer…" rows={5}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
         )}
         <div className="flex gap-2">
           {currentQ > 0 && (
@@ -143,7 +143,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
             </button>
           ) : (
             <button onClick={() => setCurrentQ(c => c + 1)} disabled={!answers[q.id]}
-              className="flex-1 flex items-center justify-center gap-1 py-2 text-sm bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">
+              className="flex-1 flex items-center justify-center gap-1 py-2 text-sm bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">
               Next <ChevronRight size={14} />
             </button>
           )}
@@ -185,7 +185,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
     <div className="space-y-8">
       <div>
         <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2">
-          <GraduationCap size={16} className="text-purple-400" /> Subject Exams
+          <GraduationCap size={16} className="text-orange-400" /> Subject Exams
         </h2>
         <p className="text-xs text-gray-500 mb-4">A 20-question comprehensive exam covering your 5 most recently studied topics in a subject.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -196,7 +196,7 @@ export default function QuizPageClient({ subjectStats, recentExams }: Props) {
                 <div className="text-xs text-gray-500 mt-0.5">{s.studied} topic{s.studied !== 1 ? 's' : ''} studied</div>
               </div>
               <button onClick={() => startExam(s.subject)} disabled={s.studied === 0}
-                className="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+                className="text-xs px-3 py-1.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
                 {s.studied === 0 ? 'Study a topic first' : 'Take Exam'}
               </button>
               <button onClick={() => batchGenerate(s.subject, s.batchTopics)} disabled={batching === s.subject || s.batchTopics.length === 0}

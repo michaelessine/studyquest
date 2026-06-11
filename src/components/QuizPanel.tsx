@@ -1,13 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Loader2, CheckCircle2, XCircle, ChevronRight, RefreshCw, AlertTriangle, Gauge } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, ChevronRight, RefreshCw, Gauge } from 'lucide-react'
 import { useToast } from './ToastProvider'
+import WeakSpotDiagnosis from './WeakSpotDiagnosis'
 
-type GapResult = {
-  weakPrerequisites: { skillNodeId: string; topicName: string; masteryLevel: number; why: string }[]
-  reviewSuggestion: string
-}
 const DIFF_BADGE: Record<string, string> = {
   Basic:        'bg-green-900/50 text-green-300 border-green-800',
   Intermediate: 'bg-yellow-900/50 text-yellow-300 border-yellow-800',
@@ -43,7 +39,8 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
   const [submitting, setSubmitting] = useState(false)
   const [newMastery, setNewMastery] = useState<number | null>(null)
   const [difficulty, setDifficulty] = useState<string | null>(null)
-  const [gaps, setGaps] = useState<GapResult | null>(null)
+  const [wrongAnswers, setWrongAnswers] = useState<{ question: string; userAnswer: string }[]>([])
+  const [failedScore, setFailedScore] = useState<number | null>(null)
 
   useEffect(() => { loadHistory() }, [skillNodeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -91,7 +88,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
         showToast('info', `Mastery updated to ${data.newMasteryLevel}★`)
       }
       setPhase('results'); loadHistory()
-      // Feature 2: analyze gaps if failed
+      // Weak-spot diagnosis if failed (the component fetches /api/weak-spots/diagnose)
       if (data.evaluation && data.evaluation.score < 70) {
         const wrong = (data.evaluation.questionResults ?? [])
           .filter((qr: { correct: boolean }) => !qr.correct)
@@ -99,10 +96,10 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
             const q = quiz.questions.find(qq => qq.id === qr.id)
             return { question: q?.question ?? '', userAnswer: qr.userAnswer }
           })
-        fetch('/api/quiz/analyze-gaps', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ skillNodeId, topicName, score: data.evaluation.score, wrongAnswers: wrong }),
-        }).then(r => r.json()).then(g => setGaps(g)).catch(() => {})
+        setWrongAnswers(wrong)
+        setFailedScore(data.evaluation.score)
+      } else {
+        setWrongAnswers([]); setFailedScore(null)
       }
     } catch { showToast('info', 'Evaluation failed') }
     finally   { setSubmitting(false) }
@@ -116,7 +113,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
           <span className="text-xs text-gray-500">Quiz History</span>
           <div className="flex gap-1.5">
             <button onClick={() => startQuiz(false)}
-              className="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors">
+              className="text-xs px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white rounded-lg transition-colors">
               Practice
             </button>
             <button onClick={() => startQuiz(true)} title="Generate fresh harder questions (uses an API call)"
@@ -144,7 +141,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
   if (phase === 'loading') {
     return (
       <div className="flex flex-col items-center gap-3 py-6">
-        <Loader2 size={24} className="animate-spin text-purple-500" />
+        <Loader2 size={24} className="animate-spin text-orange-500" />
         <span className="text-sm text-gray-500">Generating quiz with Claude…</span>
       </div>
     )
@@ -174,7 +171,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
             <span>{pct}%</span>
           </div>
           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-purple-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-orange-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
 
@@ -185,7 +182,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
             {q.options?.map(opt => (
               <button key={opt} onClick={() => setAnswers(a => ({ ...a, [q.id]: opt }))}
                 className={`w-full text-left px-3 py-2 rounded-lg text-xs border transition-colors ${
-                  answers[q.id] === opt ? 'bg-purple-900/50 border-purple-700 text-purple-200' : 'bg-gray-800/60 border-gray-700 text-gray-300 hover:border-gray-600'
+                  answers[q.id] === opt ? 'bg-orange-900/50 border-orange-700 text-orange-200' : 'bg-gray-800/60 border-gray-700 text-gray-300 hover:border-gray-600'
                 }`}>
                 {opt}
               </button>
@@ -194,7 +191,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
         ) : (
           <textarea value={answers[q.id] ?? ''} onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
             placeholder="Write your answer…" rows={4}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
         )}
 
         <div className="flex gap-2">
@@ -209,7 +206,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
             </button>
           ) : (
             <button onClick={() => setCurrentQ(q => q + 1)} disabled={!answers[q.id]}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg transition-colors">
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg transition-colors">
               Next <ChevronRight size={12} />
             </button>
           )}
@@ -226,7 +223,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
         <div className={`text-center py-3 rounded-xl ${evalResult.passed ? 'bg-green-950/30 border border-green-900/40' : 'bg-gray-800/60 border border-gray-700'}`}>
           <div className={`text-3xl font-black ${evalResult.passed ? 'text-green-400' : 'text-gray-400'}`}>{evalResult.score}%</div>
           <div className="text-xs text-gray-500 mt-0.5">{evalResult.passed ? '✓ Passed' : 'Not passed'} · Grade {grade}</div>
-          {newMastery !== null && <div className="text-xs text-purple-400 mt-1">Mastery → {newMastery}★</div>}
+          {newMastery !== null && <div className="text-xs text-orange-400 mt-1">Mastery → {newMastery}★</div>}
         </div>
         <p className="text-xs text-gray-400 leading-relaxed">{evalResult.feedback}</p>
         {evalResult.score < 50 && (
@@ -234,22 +231,16 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
             Review recommended — consider revisiting the prerequisites.
           </div>
         )}
-        {/* Feature 2: prerequisite gap suggestions */}
-        {gaps && gaps.weakPrerequisites.length > 0 && (
-          <div className="text-xs bg-yellow-950/20 border border-yellow-900/30 rounded-lg px-3 py-2 space-y-2">
-            <div className="flex items-start gap-1.5 text-yellow-400">
-              <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-              <span>{gaps.reviewSuggestion}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {gaps.weakPrerequisites.map(w => (
-                <Link key={w.skillNodeId} href={`/topics?subject=${subject}`}
-                  className="text-[10px] px-2 py-0.5 bg-yellow-900/40 border border-yellow-800/50 text-yellow-300 rounded hover:bg-yellow-800/50 transition-colors">
-                  Review: {w.topicName}
-                </Link>
-              ))}
-            </div>
-          </div>
+        {/* Weak-spot diagnosis + micro-path (only when failed) */}
+        {failedScore !== null && (
+          <WeakSpotDiagnosis
+            skillNodeId={skillNodeId}
+            topicName={topicName}
+            subject={subject}
+            score={failedScore}
+            source="quiz"
+            wrongAnswers={wrongAnswers}
+          />
         )}
 
         <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -271,7 +262,7 @@ export default function QuizPanel({ skillNodeId, topicName, subject, onMasteryUp
           <button onClick={() => onAction?.('socratic')} className="text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded transition-colors">Socratic session</button>
         </div>
 
-        <button onClick={() => { setPhase('history'); setEvalResult(null); setNewMastery(null); setGaps(null) }}
+        <button onClick={() => { setPhase('history'); setEvalResult(null); setNewMastery(null); setWrongAnswers([]); setFailedScore(null) }}
           className="w-full flex items-center justify-center gap-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition-colors">
           <RefreshCw size={11} /> Done
         </button>

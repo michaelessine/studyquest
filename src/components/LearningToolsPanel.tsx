@@ -69,11 +69,11 @@ function TeachMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skillNo
     <div className="space-y-3">
       <p className="text-xs text-gray-500">Explain {topicName} as if teaching someone who knows the prerequisites. Be detailed.</p>
       <textarea value={text} onChange={e => setText(e.target.value)} rows={6} placeholder="Start teaching…"
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
       <div className="flex gap-2">
         <button onClick={back} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Cancel</button>
         <button onClick={submit} disabled={!text.trim() || loading}
-          className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">
+          className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">
           {loading ? <Loader2 size={12} className="animate-spin" /> : null} Submit explanation
         </button>
       </div>
@@ -156,10 +156,10 @@ function DebateMode({ skillNodeId, topicName, mastery, onMasteryUpdated, back }:
       <div className="space-y-3">
         <p className="text-xs text-gray-500">State a claim about {topicName} and defend it against Claude&apos;s challenges.</p>
         <textarea value={claim} onChange={e => setClaim(e.target.value)} rows={3} placeholder="e.g. Quantum entanglement proves non-locality…"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
         <div className="flex gap-2">
           <button onClick={back} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Cancel</button>
-          <button onClick={start} disabled={!claim.trim() || loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">
+          <button onClick={start} disabled={!claim.trim() || loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">
             {loading ? <Loader2 size={12} className="animate-spin" /> : null} Start debate
           </button>
         </div>
@@ -171,16 +171,16 @@ function DebateMode({ skillNodeId, topicName, mastery, onMasteryUpdated, back }:
     <div className="space-y-3">
       <div className="space-y-2 max-h-60 overflow-y-auto">
         {turns.map((t, i) => (
-          <div key={i} className={`text-xs rounded-lg px-2.5 py-2 ${t.role === 'user' ? 'bg-purple-900/40 text-purple-100 ml-4' : 'bg-gray-800/60 text-gray-300 mr-4'}`}>
+          <div key={i} className={`text-xs rounded-lg px-2.5 py-2 ${t.role === 'user' ? 'bg-orange-900/40 text-orange-100 ml-4' : 'bg-gray-800/60 text-gray-300 mr-4'}`}>
             <div className="whitespace-pre-wrap">{t.text}</div>
           </div>
         ))}
         {loading && <Loader2 size={14} className="animate-spin text-gray-500 mx-auto" />}
       </div>
       <textarea value={reply} onChange={e => setReply(e.target.value)} rows={2} placeholder="Your rebuttal…"
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
       <div className="flex gap-2">
-        <button onClick={sendReply} disabled={!reply.trim() || loading} className="flex-1 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">Reply</button>
+        <button onClick={sendReply} disabled={!reply.trim() || loading} className="flex-1 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">Reply</button>
         {userTurns >= 4 && <button onClick={finish} disabled={loading} className="px-3 py-1.5 text-xs bg-green-700 hover:bg-green-600 text-white rounded-lg">Finish &amp; score</button>}
       </div>
       <div className="text-[10px] text-gray-600 text-center">{userTurns}/5 exchanges{userTurns < 4 ? ' · finish available after 4' : ''}</div>
@@ -206,14 +206,14 @@ function ResearchMode({ skillNodeId, topicName, back }: { skillNodeId: string; t
     }).catch(() => { showToast('info', 'Failed to fetch papers'); setLoading(false) })
   }, [skillNodeId, topicName]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return <div className="flex flex-col items-center gap-2 py-6"><Loader2 size={22} className="animate-spin text-purple-500" /><span className="text-xs text-gray-500">Finding papers…</span></div>
+  if (loading) return <div className="flex flex-col items-center gap-2 py-6"><Loader2 size={22} className="animate-spin text-orange-500" /><span className="text-xs text-gray-500">Finding papers…</span></div>
 
   return (
     <div className="space-y-3">
       <div className="space-y-2 max-h-72 overflow-y-auto">
         {papers.map((p, i) => (
           <div key={p.id ?? i} className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-3">
-            <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-purple-300 hover:text-purple-200 flex items-start gap-1">
+            <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-orange-300 hover:text-orange-200 flex items-start gap-1">
               <ExternalLink size={10} className="shrink-0 mt-0.5" /> {p.title}
             </a>
             <div className="text-[10px] text-gray-500 mt-0.5">{p.authors} · {p.year} · <span className="uppercase">{p.source}</span></div>
@@ -279,7 +279,7 @@ function SocraticMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skil
         </div>
         <div className="text-xs"><span className="text-green-400 font-semibold">Insights:</span> <span className="text-gray-400">{score.insights}</span></div>
         <div className="text-xs"><span className="text-yellow-400 font-semibold">Gaps:</span> <span className="text-gray-400">{score.gaps}</span></div>
-        <div className="text-xs"><span className="text-purple-400 font-semibold">Next:</span> <span className="text-gray-400">{score.nextStepRecommendation}</span></div>
+        <div className="text-xs"><span className="text-orange-400 font-semibold">Next:</span> <span className="text-gray-400">{score.nextStepRecommendation}</span></div>
         <button onClick={back} className="w-full py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Back to tools</button>
       </div>
     )
@@ -291,7 +291,7 @@ function SocraticMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skil
         <p className="text-xs text-gray-500">A Socratic tutor will guide you to understanding {topicName} through questions — not answers.</p>
         <div className="flex gap-2">
           <button onClick={back} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Cancel</button>
-          <button onClick={begin} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">
+          <button onClick={begin} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">
             {loading ? <Loader2 size={12} className="animate-spin" /> : null} Begin session
           </button>
         </div>
@@ -304,14 +304,14 @@ function SocraticMode({ skillNodeId, topicName, onMasteryUpdated, back }: { skil
     <div className="space-y-3">
       <div className="space-y-2 max-h-60 overflow-y-auto">
         {turns.map((t, i) => (
-          <div key={i} className={`text-xs rounded-lg px-2.5 py-2 ${t.role === 'user' ? 'bg-purple-900/40 text-purple-100 ml-4' : 'bg-gray-800/60 text-gray-300 mr-4'}`}>{t.text}</div>
+          <div key={i} className={`text-xs rounded-lg px-2.5 py-2 ${t.role === 'user' ? 'bg-orange-900/40 text-orange-100 ml-4' : 'bg-gray-800/60 text-gray-300 mr-4'}`}>{t.text}</div>
         ))}
         {loading && <Loader2 size={14} className="animate-spin text-gray-500 mx-auto" />}
       </div>
       <textarea value={input} onChange={e => setInput(e.target.value)} rows={2} placeholder="Your answer…"
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-purple-600" />
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 resize-none focus:outline-none focus:border-orange-600" />
       <div className="flex gap-2">
-        <button onClick={send} disabled={!input.trim() || loading} className="flex-1 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">Respond</button>
+        <button onClick={send} disabled={!input.trim() || loading} className="flex-1 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">Respond</button>
         <button onClick={end} disabled={loading || userTurns < 3} className="px-3 py-1.5 text-xs bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white rounded-lg">End session</button>
       </div>
     </div>
@@ -353,7 +353,7 @@ function TextbookMode({ skillNodeId, topicName, currentMastery, back }: { skillN
       <div className="space-y-3">
         <div className="max-h-72 overflow-y-auto text-xs text-gray-300 bg-gray-800/40 rounded-lg p-3 whitespace-pre-wrap leading-relaxed">{content}</div>
         <div className="flex gap-2">
-          <button onClick={download} className="flex-1 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded-lg">Download (.md)</button>
+          <button onClick={download} className="flex-1 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 text-white rounded-lg">Download (.md)</button>
           <button onClick={back} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Back</button>
         </div>
       </div>
@@ -365,11 +365,11 @@ function TextbookMode({ skillNodeId, topicName, currentMastery, back }: { skillN
       <p className="text-xs text-gray-500">Generate a personalized textbook chapter on {topicName} for your level.</p>
       <div>
         <label className="text-[10px] text-gray-500">Level: {level} {level <= 1 ? '(fundamentals)' : level >= 5 ? '(research)' : level >= 3 ? '(proofs & depth)' : '(intermediate)'}</label>
-        <input type="range" min={0} max={5} step={1} value={level} onChange={e => setLevel(parseInt(e.target.value))} className="w-full accent-purple-600" />
+        <input type="range" min={0} max={5} step={1} value={level} onChange={e => setLevel(parseInt(e.target.value))} className="w-full accent-orange-600" />
       </div>
       <div className="flex gap-2">
         <button onClick={back} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700">Cancel</button>
-        <button onClick={generate} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white rounded-lg">
+        <button onClick={generate} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-1.5 text-xs bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg">
           {loading ? <><Loader2 size={12} className="animate-spin" /> Writing chapter…</> : 'Generate chapter'}
         </button>
       </div>
@@ -402,7 +402,7 @@ export default function LearningToolsPanel({ skillNodeId, topicName, subject, cu
       {tools.map(t => (
         <button key={t.id} onClick={() => setTool(t.id)}
           className="flex items-center gap-2.5 px-3 py-2 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700 rounded-lg text-left transition-colors">
-          <span className="text-purple-400 shrink-0">{t.icon}</span>
+          <span className="text-orange-400 shrink-0">{t.icon}</span>
           <div className="min-w-0">
             <div className="text-xs font-medium text-gray-200">{t.label}</div>
             <div className="text-[10px] text-gray-500">{t.desc}</div>

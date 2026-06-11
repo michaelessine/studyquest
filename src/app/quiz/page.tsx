@@ -35,7 +35,7 @@ export default async function QuizPage() {
         <h1 className="text-2xl font-bold text-gray-100">Quiz & Exams</h1>
         <p className="text-sm text-gray-500 mt-0.5">Test your knowledge. Passing a quiz improves your mastery rating.</p>
       </div>
-      <Suspense fallback={<div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-purple-500" /></div>}>
+      <Suspense fallback={<div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-orange-500" /></div>}>
         <QuizPageClient subjectStats={subjectStats} recentExams={recentExamsPlain} />
       </Suspense>
     </div>

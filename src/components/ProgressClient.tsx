@@ -39,12 +39,12 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
 
       {/* This week's advancement */}
       {advancement.length > 0 && (
-        <div className="card p-5 border-purple-700/40">
-          <h2 className="font-semibold text-gray-200 mb-2 flex items-center gap-2"><Sparkles size={15} className="text-purple-400" /> This Week&apos;s Advancement</h2>
+        <div className="card p-5 border-orange-700/40">
+          <h2 className="font-semibold text-gray-200 mb-2 flex items-center gap-2"><Sparkles size={15} className="text-orange-400" /> This Week&apos;s Advancement</h2>
           <p className="text-sm text-gray-300">
             You advanced toward {advancement.map((a, i) => (
               <span key={a.label}>
-                <span className="text-purple-300 font-medium">{a.label}</span> (+{a.count} topic{a.count !== 1 ? 's' : ''}){i < advancement.length - 1 ? (i === advancement.length - 2 ? ', and ' : ', ') : ''}
+                <span className="text-orange-300 font-medium">{a.label}</span> (+{a.count} topic{a.count !== 1 ? 's' : ''}){i < advancement.length - 1 ? (i === advancement.length - 2 ? ', and ' : ', ') : ''}
               </span>
             ))}.
           </p>
@@ -54,14 +54,14 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Mastery growth */}
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2"><TrendingUp size={15} className="text-purple-400" /> Mastery Growth (90 days)</h2>
+          <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2"><TrendingUp size={15} className="text-orange-400" /> Mastery Growth (90 days)</h2>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={growth}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
               <XAxis dataKey="date" stroke="#6b7280" fontSize={10} interval={14} />
               <YAxis stroke="#6b7280" fontSize={10} />
               <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }} />
-              <Line type="monotone" dataKey="total" name="Cumulative stars" stroke="#7c3aed" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="total" name="Cumulative stars" stroke="#ea580c" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
           <p className="text-[10px] text-gray-600 mt-1">Total mastery stars earned over time (all topics).</p>
@@ -69,14 +69,14 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
 
         {/* Career radar */}
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2"><Target size={15} className="text-purple-400" /> Career Readiness</h2>
+          <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2"><Target size={15} className="text-orange-400" /> Career Readiness</h2>
           {radarData.length === 0 ? <p className="text-sm text-gray-600">No career data yet.</p> : (
             <ResponsiveContainer width="100%" height={240}>
               <RadarChart data={radarData} outerRadius={85}>
                 <PolarGrid stroke="#1f2937" />
                 <PolarAngleAxis dataKey="axis" tick={{ fill: '#9ca3af', fontSize: 9 }} />
                 <PolarRadiusAxis domain={[0, 100]} tick={{ fill: '#4b5563', fontSize: 8 }} angle={90} />
-                <Radar name="Readiness" dataKey="readiness" stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.35} />
+                <Radar name="Readiness" dataKey="readiness" stroke="#ea580c" fill="#ea580c" fillOpacity={0.35} />
                 <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }} />
               </RadarChart>
             </ResponsiveContainer>
@@ -94,7 +94,7 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {nextRecommended.map(t => (
               <Link key={t.id} href={`/topics?subject=${t.subject}`}
-                className="flex items-center justify-between text-sm bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2 hover:border-purple-700/50 transition-colors">
+                className="flex items-center justify-between text-sm bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2 hover:border-orange-700/50 transition-colors">
                 <span className="text-gray-200 truncate">{t.name}</span>
                 <span className="text-[10px] text-gray-500 shrink-0 ml-2">{t.masteryLevel}★</span>
               </Link>
@@ -134,10 +134,10 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
                       <div key={t.id} className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-200 truncate">{t.name}</span>
-                          <span className="text-[10px] text-purple-300 shrink-0 ml-2">{t.masteryLevel}★</span>
+                          <span className="text-[10px] text-orange-300 shrink-0 ml-2">{t.masteryLevel}★</span>
                         </div>
                         <div className="h-1 bg-gray-800 rounded-full overflow-hidden mt-1.5">
-                          <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(t.masteryLevel / 5) * 100}%` }} />
+                          <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(t.masteryLevel / 5) * 100}%` }} />
                         </div>
                       </div>
                     ))}

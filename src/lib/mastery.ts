@@ -27,14 +27,15 @@ export function teachDebateDelta(score: number): number {
   return 0
 }
 
-/** Map a university letter grade to a 0–100 score. */
+/**
+ * Map a university grade (1–5 scale, 5 = excellent; "Fail" = failed) to a 0–100 score.
+ * Bands: 90+ → 5, 80-89 → 4, 70-79 → 3, 60-69 → 2, 50-59 → 1, below 50 → Fail.
+ */
 export function gradeToScore(grade: string): number {
-  const g = grade.trim().toUpperCase()
+  const g = grade.trim().toLowerCase()
   const map: Record<string, number> = {
-    'A+': 100, 'A': 95, 'A-': 91,
-    'B+': 88, 'B': 83, 'B-': 80,
-    'C+': 77, 'C': 73, 'C-': 70,
-    'D': 63, 'F': 45,
+    '5': 95, '4': 85, '3': 75, '2': 65, '1': 55,
+    'fail': 45, 'f': 45, '0': 45,
   }
   return map[g] ?? 60
 }
@@ -46,8 +47,8 @@ function round25(n: number): number {
 
 /**
  * Can this node reach 5.0?
- *   - a real_exam with grade A/A+ (score >= 90), OR
- *   - at least 3 sessions with 90%+ AND one real_exam with grade B+ or better (score >= 85)
+ *   - a real_exam with grade 5 (score >= 90), OR
+ *   - at least 3 sessions with 90%+ AND one real_exam with grade 4 or better (score >= 85)
  */
 export async function qualifiesForFive(skillNodeId: string): Promise<boolean> {
   const events = await prisma.masteryEvent.findMany({ where: { skillNodeId }, select: { eventType: true, score: true } })

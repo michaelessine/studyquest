@@ -9,7 +9,7 @@ import { BookOpen, ChevronRight } from 'lucide-react'
 function statusStyle(status: string) {
   const map: Record<string, string> = {
     active:    'bg-green-900/50 text-green-300 border-green-800',
-    completed: 'bg-purple-900/50 text-purple-300 border-purple-800',
+    completed: 'bg-orange-900/50 text-orange-300 border-orange-800',
     planned:   'bg-gray-800 text-gray-400 border-gray-700',
   }
   return map[status] ?? 'bg-gray-800 text-gray-400'
@@ -97,7 +97,7 @@ export default async function CoursesPage() {
                         </div>
                         <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-purple-600 rounded-full"
+                            className="h-full bg-orange-600 rounded-full"
                             style={{ width: `${topicPct}%` }}
                           />
                         </div>
@@ -114,7 +114,7 @@ export default async function CoursesPage() {
                     {/* Deep-link to Topics filtered by subject */}
                     <Link
                       href={`/topics?subject=${course.subject}`}
-                      className="mt-3 flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                      className="mt-3 flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors"
                     >
                       View topics <ChevronRight size={11} />
                     </Link>

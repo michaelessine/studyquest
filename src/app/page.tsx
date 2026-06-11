@@ -89,21 +89,21 @@ export default async function DashboardPage() {
 
       {/* In progress — pinned learning path */}
       {pinnedPathView && (
-        <div className="card p-5 border-purple-700/50">
+        <div className="card p-5 border-orange-700/50">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-200 flex items-center gap-2">
-              <Route size={15} className="text-purple-400" /> In Progress
+              <Route size={15} className="text-orange-400" /> In Progress
             </h2>
-            <Link href="/learning-paths" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">All paths <ChevronRight size={12} /></Link>
+            <Link href="/learning-paths" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">All paths <ChevronRight size={12} /></Link>
           </div>
           <div className="text-sm font-medium text-gray-200">{pinnedPathView.name}</div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden my-2">
-            <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full" style={{ width: `${pinnedPathView.pct}%` }} />
+            <div className="h-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full" style={{ width: `${pinnedPathView.pct}%` }} />
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500">{pinnedPathView.pct}% complete</span>
             {pinnedPathView.nextTopic && (
-              <Link href={`/topics?subject=${pinnedPathView.subject}`} className="text-purple-400 hover:text-purple-300">
+              <Link href={`/topics?subject=${pinnedPathView.subject}`} className="text-orange-400 hover:text-orange-300">
                 Next: {pinnedPathView.nextTopic} →
               </Link>
             )}
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-200">Subject Progress</h2>
-          <Link href="/topics" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">Browse topics <ChevronRight size={12} /></Link>
+          <Link href="/topics" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">Browse topics <ChevronRight size={12} /></Link>
         </div>
         <div className="space-y-4">
           {subjectProgress.map(({ subject, mastered, active, pct }) => (
@@ -123,11 +123,11 @@ export default async function DashboardPage() {
               <div className="flex justify-between items-baseline mb-1.5">
                 <span className="text-sm text-gray-300">{SUBJECT_LABEL[subject]}</span>
                 <span className="text-xs text-gray-500 tabular-nums">
-                  {mastered} mastered · {active} in progress · <span className="text-purple-500 font-semibold">{pct}%</span>
+                  {mastered} mastered · {active} in progress · <span className="text-orange-500 font-semibold">{pct}%</span>
                 </span>
               </div>
               <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
               </div>
             </div>
           ))}
@@ -142,7 +142,7 @@ export default async function DashboardPage() {
               <AlertCircle size={15} className="text-yellow-400" />
               Due for Review
             </h2>
-            <Link href="/topics" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">All topics <ChevronRight size={12} /></Link>
+            <Link href="/topics" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">All topics <ChevronRight size={12} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {dueNodes.map(n => (
@@ -158,10 +158,10 @@ export default async function DashboardPage() {
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-200 flex items-center gap-2">
-              <GraduationCap size={15} className="text-purple-400" />
+              <GraduationCap size={15} className="text-orange-400" />
               Recent Exams
             </h2>
-            <Link href="/quiz" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">Take an exam <ChevronRight size={12} /></Link>
+            <Link href="/quiz" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">Take an exam <ChevronRight size={12} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {recentExams.map(e => (
@@ -183,14 +183,14 @@ export default async function DashboardPage() {
       {/* Upcoming deadlines */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><Clock size={15} className="text-purple-400" />Upcoming Deadlines</h2>
-          <Link href="/schedule" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">View all <ChevronRight size={12} /></Link>
+          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><Clock size={15} className="text-orange-400" />Upcoming Deadlines</h2>
+          <Link href="/schedule" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">View all <ChevronRight size={12} /></Link>
         </div>
         {upcomingDeadlines.length === 0 ? (
           <div className="py-8 flex flex-col items-center gap-3">
             <Calendar size={32} className="text-gray-700" />
             <p className="text-sm text-gray-500">No upcoming deadlines</p>
-            <Link href="/schedule" className="px-4 py-1.5 text-xs border border-purple-700/60 text-purple-400 hover:bg-purple-900/30 rounded-lg transition-colors">+ Add Deadline</Link>
+            <Link href="/schedule" className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors">+ Add Deadline</Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -218,14 +218,14 @@ export default async function DashboardPage() {
       {/* Active course topics */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><BookOpen size={15} className="text-purple-400" />Active Topics</h2>
-          <Link href="/courses" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">All courses <ChevronRight size={12} /></Link>
+          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><BookOpen size={15} className="text-orange-400" />Active Topics</h2>
+          <Link href="/courses" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">All courses <ChevronRight size={12} /></Link>
         </div>
         {activeTopics.length === 0 ? (
           <div className="py-8 flex flex-col items-center gap-3">
             <List size={32} className="text-gray-700" />
             <p className="text-sm text-gray-500">No pending course topics</p>
-            <Link href="/topics" className="px-4 py-1.5 text-xs border border-purple-700/60 text-purple-400 hover:bg-purple-900/30 rounded-lg transition-colors">Browse Topics</Link>
+            <Link href="/topics" className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors">Browse Topics</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

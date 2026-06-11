@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
   }, [])
 
   if (loading) {
-    return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-purple-500" /></div>
+    return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-orange-500" /></div>
   }
   if (!data) {
     return <div className="p-8 text-center text-gray-500">Failed to load analytics.</div>
@@ -47,14 +47,14 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card p-5">
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Clock size={13} /> Total time</div>
-          <div className="text-3xl font-black text-purple-400">{data.totalHours}h</div>
+          <div className="text-3xl font-black text-orange-400">{data.totalHours}h</div>
           <div className="text-xs text-gray-600 mt-1">{data.totalSessions} sessions logged</div>
         </div>
         <div className="card p-5">
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Target size={13} /> Semester goal</div>
           <div className="text-3xl font-black text-gray-200">{data.semesterGoalHours}h</div>
           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mt-2">
-            <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pacePct}%` }} />
+            <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pacePct}%` }} />
           </div>
           <div className="text-xs text-gray-600 mt-1">{pacePct}% of goal reached</div>
         </div>
@@ -76,7 +76,7 @@ export default function AnalyticsPage() {
             <XAxis dataKey="date" stroke="#6b7280" fontSize={10} interval={4} />
             <YAxis stroke="#6b7280" fontSize={10} />
             <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }} />
-            <Line type="monotone" dataKey="hours" stroke="#7c3aed" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="hours" stroke="#ea580c" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="day" stroke="#6b7280" fontSize={10} />
               <YAxis stroke="#6b7280" fontSize={10} />
               <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="mins" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="mins" fill="#ea580c" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

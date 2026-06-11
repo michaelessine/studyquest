@@ -50,7 +50,7 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
   return (
     <div className="p-5 md:p-8 max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2"><Briefcase size={22} className="text-purple-400" /> Career Alignment</h1>
+        <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2"><Briefcase size={22} className="text-orange-400" /> Career Alignment</h1>
         <p className="text-sm text-gray-500 mt-0.5">See how your mastered topics map to careers, and what to study next.</p>
       </div>
 
@@ -69,7 +69,7 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
                 <span className="text-gray-300">{p.label}</span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-gray-600">{p.readiness}%</span>
-                  {selected.has(p.id) && <Check size={14} className="text-purple-400" />}
+                  {selected.has(p.id) && <Check size={14} className="text-orange-400" />}
                 </span>
               </button>
             ))}
@@ -89,14 +89,14 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
                 <p className="text-xs text-gray-500 mt-0.5">{p.masteredTopics.length} of {p.totalTopics} mapped topics mastered</p>
               </div>
               <div className="flex gap-4 shrink-0">
-                <Ring pct={p.relevance} label="Relevance" color="#7c3aed" />
-                <Ring pct={p.readiness} label="Readiness" color={p.readiness >= 80 ? '#16a34a' : p.readiness >= 50 ? '#7c3aed' : '#eab308'} />
+                <Ring pct={p.relevance} label="Relevance" color="#ea580c" />
+                <Ring pct={p.readiness} label="Readiness" color={p.readiness >= 80 ? '#16a34a' : p.readiness >= 50 ? '#ea580c' : '#eab308'} />
               </div>
             </div>
 
             {/* Gap analysis */}
             <div className="mt-3 text-sm text-gray-400 bg-gray-800/40 border border-gray-700/40 rounded-lg px-3 py-2 flex items-start gap-2">
-              <Sparkles size={14} className="text-purple-400 shrink-0 mt-0.5" />
+              <Sparkles size={14} className="text-orange-400 shrink-0 mt-0.5" />
               <span>{p.gapText}</span>
             </div>
 
@@ -117,12 +117,12 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
               </div>
               {/* Recommended next */}
               <div>
-                <div className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1"><TrendingUp size={12} /> Study next</div>
+                <div className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 flex items-center gap-1"><TrendingUp size={12} /> Study next</div>
                 {p.recommendedNext.length === 0 ? <p className="text-xs text-gray-600">Unlock prerequisites to reveal next steps.</p> : (
                   <div className="space-y-1.5">
                     {p.recommendedNext.map(t => (
                       <Link key={t.id} href={`/topics?subject=${t.subject}`}
-                        className="flex items-center justify-between text-xs bg-gray-800/60 border border-gray-700/50 rounded px-2 py-1.5 hover:border-purple-700/50 transition-colors">
+                        className="flex items-center justify-between text-xs bg-gray-800/60 border border-gray-700/50 rounded px-2 py-1.5 hover:border-orange-700/50 transition-colors">
                         <span className="text-gray-300 truncate">{t.name}</span>
                         <span className="text-[10px] text-gray-500 shrink-0 ml-2">{subjLabel(t.subject)} · {t.masteryLevel}★</span>
                       </Link>

@@ -14,7 +14,7 @@ import QuizPanel from './QuizPanel'
 import LearningToolsPanel from './LearningToolsPanel'
 import TechniqueTips from './TechniqueTips'
 
-const ReactFlow  = dynamic(() => import('@xyflow/react').then(m => m.ReactFlow),  { ssr: false, loading: () => <div className="flex items-center justify-center h-full gap-3 text-gray-500"><Loader2 size={28} className="animate-spin text-purple-500" /><span className="text-sm">Loading…</span></div> })
+const ReactFlow  = dynamic(() => import('@xyflow/react').then(m => m.ReactFlow),  { ssr: false, loading: () => <div className="flex items-center justify-center h-full gap-3 text-gray-500"><Loader2 size={28} className="animate-spin text-orange-500" /><span className="text-sm">Loading…</span></div> })
 const Background = dynamic(() => import('@xyflow/react').then(m => m.Background), { ssr: false })
 const Controls   = dynamic(() => import('@xyflow/react').then(m => m.Controls),   { ssr: false })
 const MiniMap    = dynamic(() => import('@xyflow/react').then(m => m.MiniMap),    { ssr: false })
@@ -34,7 +34,7 @@ interface Props {
 // Mastery level → node visual style
 function nodeStyle(ml: number, status: string): string {
   if (ml >= 5) return 'bg-green-900/70 border-green-600 text-green-200 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
-  if (ml >= 3) return 'bg-purple-900/70 border-purple-600 text-purple-200 shadow-[0_0_12px_rgba(124,58,237,0.3)]'
+  if (ml >= 3) return 'bg-orange-900/70 border-orange-600 text-orange-200 shadow-[0_0_12px_rgba(234,88,12,0.3)]'
   if (ml >= 1) return 'bg-blue-900/70 border-blue-600 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.25)]'
   if (status === 'unlocked') return 'bg-gray-800/80 border-gray-500 text-gray-300'
   return 'bg-gray-800/50 border-gray-700 text-gray-600'
@@ -52,7 +52,7 @@ function SkillNodeComponent({ data }: NodeProps) {
         {[1,2,3,4,5].map(i => (
           <svg key={i} width={9} height={9} viewBox="0 0 24 24"
             fill={i <= stars ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"
-            className={i <= stars ? (stars>=5?'text-green-400':stars>=3?'text-purple-400':'text-blue-400') : 'text-gray-600'}>
+            className={i <= stars ? (stars>=5?'text-green-400':stars>=3?'text-orange-400':'text-blue-400') : 'text-gray-600'}>
             <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
           </svg>
         ))}
@@ -140,7 +140,7 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpd
       <div className="p-4 space-y-4 flex-1">
         {/* Category + tier */}
         <div className="flex gap-2 flex-wrap">
-          <span className="text-[10px] px-2 py-0.5 bg-purple-900/40 border border-purple-800/50 rounded text-purple-300">{node.category}</span>
+          <span className="text-[10px] px-2 py-0.5 bg-orange-900/40 border border-orange-800/50 rounded text-orange-300">{node.category}</span>
           <span className="text-[10px] px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-400">Tier {node.tier}</span>
         </div>
 
@@ -180,7 +180,7 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpd
               { label: 'YouTube Lectures', url: `https://www.youtube.com/results?search_query=${q}+lecture`, color: 'text-red-400' },
               { label: 'MIT OCW',          url: `https://ocw.mit.edu/search/?q=${q}`,                       color: 'text-blue-400' },
               { label: 'Khan Academy',     url: `https://www.khanacademy.org/search?page_search_query=${q}`, color: 'text-green-400' },
-              { label: 'arXiv',            url: `https://arxiv.org/search/?query=${q}&searchtype=all`,       color: 'text-purple-400' },
+              { label: 'arXiv',            url: `https://arxiv.org/search/?query=${q}&searchtype=all`,       color: 'text-orange-400' },
               { label: 'Library Genesis',  url: `https://libgen.is/search.php?req=${q}`,                    color: 'text-yellow-400' },
             ].map(l => (
               <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer"
@@ -289,7 +289,7 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
             return (
               <button key={s} onClick={() => setSubject(s)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 ${
-                  s === subject ? 'bg-purple-900/60 border border-purple-700 text-purple-300' : 'bg-gray-800/60 border border-gray-700 text-gray-400 hover:text-gray-200'
+                  s === subject ? 'bg-orange-900/60 border border-orange-700 text-orange-300' : 'bg-gray-800/60 border border-gray-700 text-gray-400 hover:text-gray-200'
                 }`}>
                 {SUBJECT_LABEL[s]}
                 {st && <span className="text-xs opacity-60">{st.mastered}/{st.total}</span>}
@@ -306,9 +306,9 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-600 inline-block" />Locked</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />Unlocked</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />★1-2</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />★3-4</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />★3-4</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />★5 Mastered</span>
-          <Link href="/quiz" className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-purple-900/40 border border-purple-800/50 text-purple-300 rounded-lg hover:bg-purple-800/50 transition-colors">
+          <Link href="/quiz" className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-orange-900/40 border border-orange-800/50 text-orange-300 rounded-lg hover:bg-orange-800/50 transition-colors">
             <GraduationCap size={12} /> Exam mode
           </Link>
         </div>
@@ -318,7 +318,7 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
       <div className="flex-1 min-h-0 relative">
         {!flowReady && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-950/90 gap-3">
-            <Loader2 size={30} className="animate-spin text-purple-500" />
+            <Loader2 size={30} className="animate-spin text-orange-500" />
             <span className="text-sm text-gray-500">Loading skill tree…</span>
           </div>
         )}
@@ -331,7 +331,7 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
             <Background color="#1f2937" gap={24} size={1} />
             <Controls showInteractive={false} className="!bottom-4 !right-4 !left-auto" />
             <MiniMap
-              nodeColor={n => { const d = n.data as SkillNodeData; return d.masteryLevel>=5?'#16a34a':d.masteryLevel>=3?'#7c3aed':d.masteryLevel>=1?'#3b82f6':'#374151' }}
+              nodeColor={n => { const d = n.data as SkillNodeData; return d.masteryLevel>=5?'#16a34a':d.masteryLevel>=3?'#ea580c':d.masteryLevel>=1?'#3b82f6':'#374151' }}
               maskColor="rgba(0,0,0,0.6)" className="!bg-gray-900 !border-gray-700" />
             <AutoFitView dep={subject} />
           </ReactFlow>

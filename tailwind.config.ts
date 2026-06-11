@@ -9,12 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Purple accent palette used throughout the app
+        // Orange accent palette used throughout the app
         primary: {
-          DEFAULT: '#7c3aed',
-          light: '#a78bfa',
-          dark: '#5b21b6',
-          glow: 'rgba(124,58,237,0.15)',
+          DEFAULT: '#ea580c',
+          light: '#fdba74',
+          dark: '#9a3412',
+          glow: 'rgba(234,88,12,0.15)',
         },
       },
       animation: {

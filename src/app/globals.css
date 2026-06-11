@@ -12,16 +12,16 @@ body {
   color: #f1f5f9;
 }
 
-/* ── Custom scrollbar (purple accent) ───────────────────────────────────── */
+/* ── Custom scrollbar (orange accent) ───────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #111827; }
-::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #6d28d9; }
+::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c2410c; }
 
 /* ── React Flow overrides ───────────────────────────────────────────────── */
 .react-flow__background { background-color: #0a0a0f !important; }
 .react-flow__edge-path { stroke: #4b5563; }
-.react-flow__edge.animated .react-flow__edge-path { stroke: #7c3aed; }
+.react-flow__edge.animated .react-flow__edge-path { stroke: #ea580c; }
 .react-flow__controls button { background: #1f2937; border-color: #374151; color: #d1d5db; }
 .react-flow__controls button:hover { background: #374151; }
 
@@ -34,13 +34,13 @@ body {
   animation: toast-slide-in 0.25s ease-out forwards;
 }
 
-/* ── Utility: purple glow card border ───────────────────────────────────── */
+/* ── Utility: orange glow card border ───────────────────────────────────── */
 @layer components {
   .card {
     @apply bg-gray-900 border border-gray-800 rounded-xl;
   }
   .card-purple {
-    @apply bg-gray-900 border border-purple-900/40 rounded-xl;
+    @apply bg-gray-900 border border-orange-900/40 rounded-xl;
   }
   .badge {
     @apply text-xs font-medium px-2 py-0.5 rounded-full;

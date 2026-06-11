@@ -53,7 +53,7 @@ export async function GET() {
   const masteryDistribution = [
     { level: 'Not started', count: buckets['0'],   color: '#374151' },
     { level: '★1-2',        count: buckets['1-2'], color: '#3b82f6' },
-    { level: '★3-4',        count: buckets['3-4'], color: '#7c3aed' },
+    { level: '★3-4',        count: buckets['3-4'], color: '#ea580c' },
     { level: '★5 Mastered', count: buckets['5'],   color: '#16a34a' },
   ]
 
