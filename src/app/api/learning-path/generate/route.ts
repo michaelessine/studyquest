@@ -63,7 +63,7 @@ ${edgeText}`
         model: SONNET,                    // keep Sonnet — complex task
         cacheSystem: true,                // Fix 2
         route: 'learning-path/generate',  // Fix 10
-        maxTokens: 3000,
+        maxTokens: 2200,
       })
       // Fix 1/7: cache generated paths for 90 days (goal+subject are deterministic)
       await setCachedResponse('learning-path/generate', cacheKey, result, 90 * 24 * 60 * 60 * 1000)

@@ -352,6 +352,7 @@ model MasteryEvent {
 
 model LearningAbility {
   userId             String   @id @default("default")
+  neuroplasticityScore Int    @default(5)
   focusScore         Int      @default(5)
   recoveryScore      Int      @default(5)
   mentalHealthScore  Int      @default(5)

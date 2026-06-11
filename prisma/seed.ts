@@ -80,6 +80,11 @@ const MATHEMATICS: TopicDef[] = [
   // Stochastic & Computational
   { name: 'Computational inverse problems',         tier: 3, category: 'Stochastic & Computational Methods', prereqs: ['Numerical analysis', 'PDE'] },
   { name: 'Quantum probability',                    tier: 4, category: 'Stochastic & Computational Methods', prereqs: ['Hilbert spaces', 'Probability theory'] },
+  // ── Added topics ────────────────────────────────────────────────────────────
+  { name: 'Integral equations',                     tier: 2, category: 'Calculus & Analysis', prereqs: ['ODE', 'Real analysis'] },
+  { name: 'Control theory',                         tier: 2, category: 'Optimization', prereqs: ['ODE', 'Linear algebra'] },
+  { name: 'Projection theory',                      tier: 1, category: 'Linear Algebra & Matrix Theory', prereqs: ['Linear algebra'] },
+  { name: 'Category theory',                        tier: 3, category: 'Algebra & Number Theory', prereqs: ['Abstract algebra'] },
 ]
 
 // ── COMPUTER SCIENCE ──────────────────────────────────────────────────────────
@@ -156,6 +161,27 @@ const COMPUTER_SCIENCE: TopicDef[] = [
   { name: 'ETL/ELT',     tier: 2, category: 'Technologies', prereqs: ['Databases'] },
   { name: 'Fabric',      tier: 2, category: 'Technologies', prereqs: ['Cloud Software and Systems', 'Databases'] },
   { name: 'CI/CD',       tier: 2, category: 'Technologies', prereqs: ['Software Engineering', 'Cloud Software and Systems'] },
+  // ── Added Theory topics ─────────────────────────────────────────────────────
+  { name: 'Computational geometry',            tier: 3, category: 'Theory', prereqs: ['Data structures and algorithms', 'Principles of Algorithmic Techniques'] },
+  { name: 'Randomized algorithms',             tier: 3, category: 'Theory', prereqs: ['Principles of Algorithmic Techniques', 'Probability theory from Mathematics'] },
+  { name: 'Logic and hard computational problems', tier: 3, category: 'Theory', prereqs: ['Theory of computation', 'Computational complexity'] },
+  { name: 'Quantum complexity theory',         tier: 4, category: 'Theory', prereqs: ['Computational complexity', 'Quantum Computing from QuantumMechanics'] },
+  { name: 'Applied cryptography',              tier: 3, category: 'Theory', prereqs: ['Cryptography', 'Information Security'] },
+  { name: 'Hacking (offensive security)',      tier: 4, category: 'Theory', prereqs: ['Cybersecurity', 'Information Security'] },
+  { name: 'Software testing',                  tier: 2, category: 'Theory', prereqs: ['Software Engineering'] },
+  { name: 'Principles and Techniques of Data Platforms', tier: 3, category: 'Theory', prereqs: ['Databases', 'Scalable Systems and Data Management'] },
+  { name: 'Multiagent learning',               tier: 4, category: 'Theory', prereqs: ['Reinforcement Learning'] },
+  { name: 'AI agents',                         tier: 5, category: 'Theory', prereqs: ['Reinforcement Learning', 'LLMs'] },
+  // ── Added Languages ─────────────────────────────────────────────────────────
+  { name: 'Java',           tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Haskell',        tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Bash/PowerShell',tier: 0, category: 'Languages', prereqs: [] },
+  // ── Added Technologies ──────────────────────────────────────────────────────
+  { name: 'Linux',          tier: 0, category: 'Technologies', prereqs: [] },
+  { name: 'Docker',         tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'Kubernetes',     tier: 2, category: 'Technologies', prereqs: ['Docker', 'Cloud Software and Systems'] },
+  { name: 'Google Cloud',   tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'FullStack',      tier: 2, category: 'Technologies', prereqs: ['React', 'Node.js'] },
 ]
 
 // ── FINANCE (Fix 6) ───────────────────────────────────────────────────────────
@@ -319,6 +345,7 @@ const OTHERS: TopicDef[] = [
   { name: 'Storytelling with data',                  tier: 3, category: 'Business Analytics', prereqs: ['Dashboarding and visualization for business'] },
   { name: 'Data-driven decision making',             tier: 3, category: 'Business Analytics', prereqs: ['Storytelling with data', 'Experimentation frameworks'] },
   { name: 'Market sizing and forecasting',           tier: 3, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
+  { name: 'Decision analysis',                       tier: 2, category: 'Business Analytics', prereqs: ['Business metrics and KPIs', 'Exploratory data analysis (EDA)'] },
 
   // ── STRATEGIC / PRODUCT / OPERATIONS MANAGEMENT ─────────────────────────────
   { name: 'Strategic Management basics',  tier: 0, category: 'Management', prereqs: [] },

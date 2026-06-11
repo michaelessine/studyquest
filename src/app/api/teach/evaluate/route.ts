@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
-import { cascadeUnlock } from '@/lib/unlock'
-import { incrementMastery, getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
+import { claudeJSON, HAIKU } from '@/lib/claude'
+import { applyMasteryGain, teachDebateDelta } from '@/lib/mastery'
 
 type TeachEval = {
   clarity: number
@@ -28,7 +27,7 @@ Return ONLY JSON: { "clarity": 1-5, "completeness": 1-5, "misconceptions": [{ "s
 
   let evaluation: TeachEval
   try {
-    evaluation = await claudeJSON<TeachEval>({ system, user: userMsg, cacheSystem: true, route: 'teach/evaluate', maxTokens: 1500 })
+    evaluation = await claudeJSON<TeachEval>({ system, user: userMsg, model: HAIKU, cacheSystem: true, route: 'teach/evaluate', maxTokens: 1000 })
   } catch (err) {
     console.error('Teach eval error:', err)
     return NextResponse.json({ error: 'Failed to evaluate' }, { status: 500 })
@@ -42,24 +41,15 @@ Return ONLY JSON: { "clarity": 1-5, "completeness": 1-5, "misconceptions": [{ "s
     },
   })
 
-  // Teach mode: +1.0 mastery if score >= 80
+  // PART 3: teach deltas (70-79→+0.5, 80-89→+0.75, 90-100→+1.0), 4.0 cap
   let newMasteryLevel: number | null = null
-  if (evaluation.overallScore >= 80) {
-    const node = await prisma.skillNode.findUnique({ where: { id: skillNodeId }, select: { masteryLevel: true } })
-    if (node && node.masteryLevel < 5) {
-      const newLevel = incrementMastery(node.masteryLevel, 1.0)
-      await prisma.skillNode.update({
-        where: { id: skillNodeId },
-        data: {
-          masteryLevel: newLevel, status: newLevel >= 5 ? 'mastered' : 'in_progress',
-          masteryUpdatedAt: new Date(),
-          nextReviewAt: getNextReviewDate(newLevel), reviewIntervalDays: getReviewIntervalDays(newLevel),
-        },
-      })
-      newMasteryLevel = newLevel
-      await cascadeUnlock()
-    }
+  let capped = false
+  const delta = teachDebateDelta(evaluation.overallScore)
+  if (delta > 0) {
+    const res = await applyMasteryGain({ skillNodeId, eventType: 'teach', score: evaluation.overallScore, delta })
+    newMasteryLevel = res.newMasteryLevel
+    capped = res.capped
   }
 
-  return NextResponse.json({ session, evaluation, newMasteryLevel })
+  return NextResponse.json({ session, evaluation, newMasteryLevel, capped })
 }

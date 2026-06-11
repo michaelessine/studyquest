@@ -1,7 +1,7 @@
 // POST /api/textbook/generate — generate (or fetch cached) a textbook chapter
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { claudeText } from '@/lib/claude'
+import { claudeText, HAIKU, SONNET } from '@/lib/claude'
 import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
@@ -22,14 +22,22 @@ export async function POST(req: NextRequest) {
   const rl = await checkRateLimit('textbook/generate')
   if (!rl.allowed) return NextResponse.json({ error: 'Rate limit reached (3/day).', resetAt: rl.resetAt }, { status: 429 })
 
-  const system = `Write a textbook chapter (1500-2000 words) on "${topicName}" for a student at mastery level ${userLevel}.
-At level 0-1: explain fundamentals and intuitions, lots of examples. At level 3-4: dive into proofs, derivations, edge cases. At level 5: discuss open problems and research directions.
-Include: definition, motivation, key theorems/concepts, worked examples, and practice problems. Format as markdown with clear headings.
-Return ONLY the markdown text, no JSON wrapper.`
+  // Cost saver: foundational chapters (level 0-2) use Haiku (3× cheaper); advanced
+  // chapters (3-5, proofs/research) use Sonnet. Target length trimmed to ~1200-1500 words.
+  const useSonnet = userLevel >= 3
+  const system = `Write a concise textbook chapter (1200-1500 words) on "${topicName}" for a student at mastery level ${userLevel}.
+At level 0-2: fundamentals, intuitions, worked examples. At level 3-4: proofs, derivations, edge cases. At level 5: open problems and research directions.
+Include: definition, motivation, key concepts, 1-2 worked examples, and 2-3 practice problems. Markdown with clear headings. Be efficient — no filler.
+Return ONLY the markdown text.`
 
   let content: string
   try {
-    content = await claudeText({ system, user: `Write the chapter on ${topicName}.`, route: 'textbook/generate', maxTokens: 4000 })
+    content = await claudeText({
+      system, user: `Write the chapter on ${topicName}.`,
+      model: useSonnet ? SONNET : HAIKU,
+      route: 'textbook/generate',
+      maxTokens: 2800,   // ~1500 words
+    })
     if (!content.trim()) throw new Error('Empty content')
   } catch (err) {
     console.error('Textbook generation error:', err)

@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
-import { cascadeUnlock } from '@/lib/unlock'
-import { incrementMastery, getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
+import { claudeJSON, HAIKU } from '@/lib/claude'
+import { applyMasteryGain, teachDebateDelta } from '@/lib/mastery'
 
 type DebateTurn = { role: 'user' | 'claude'; text: string }
 type DebateScore = { score: number; verdict: 'strong' | 'good' | 'fair' | 'weak'; strengths: string[]; areasToImprove: string[] }
@@ -23,7 +22,7 @@ Return ONLY JSON: { "score": number, "verdict": "strong"|"good"|"fair"|"weak", "
 
   let scoreResult: DebateScore
   try {
-    scoreResult = await claudeJSON<DebateScore>({ system, user: 'Score this debate.', route: 'debate/score', maxTokens: 1024 })
+    scoreResult = await claudeJSON<DebateScore>({ system, user: 'Score this debate.', model: HAIKU, route: 'debate/score', maxTokens: 700 })
   } catch (err) {
     console.error('Debate score error:', err)
     return NextResponse.json({ error: 'Failed to score' }, { status: 500 })
@@ -37,24 +36,15 @@ Return ONLY JSON: { "score": number, "verdict": "strong"|"good"|"fair"|"weak", "
     },
   })
 
-  // Debate: +0.5 mastery if score >= 70
+  // PART 3: debate deltas (70-79→+0.5, 80-89→+0.75, 90-100→+1.0), 4.0 cap
   let newMasteryLevel: number | null = null
-  if (scoreResult.score >= 70) {
-    const node = await prisma.skillNode.findUnique({ where: { id: skillNodeId }, select: { masteryLevel: true } })
-    if (node && node.masteryLevel < 5) {
-      const newLevel = incrementMastery(node.masteryLevel, 0.5)
-      await prisma.skillNode.update({
-        where: { id: skillNodeId },
-        data: {
-          masteryLevel: newLevel, status: newLevel >= 5 ? 'mastered' : 'in_progress',
-          masteryUpdatedAt: new Date(),
-          nextReviewAt: getNextReviewDate(newLevel), reviewIntervalDays: getReviewIntervalDays(newLevel),
-        },
-      })
-      newMasteryLevel = newLevel
-      await cascadeUnlock()
-    }
+  let capped = false
+  const delta = teachDebateDelta(scoreResult.score)
+  if (delta > 0) {
+    const res = await applyMasteryGain({ skillNodeId, eventType: 'debate', score: scoreResult.score, delta })
+    newMasteryLevel = res.newMasteryLevel
+    capped = res.capped
   }
 
-  return NextResponse.json({ ...scoreResult, newMasteryLevel })
+  return NextResponse.json({ ...scoreResult, newMasteryLevel, capped })
 }

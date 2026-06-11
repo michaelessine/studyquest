@@ -1,9 +1,12 @@
 import prisma from './prisma'
 
+// PART 3: a topic unlocks when ALL prerequisites reach this mastery level.
+export const UNLOCK_THRESHOLD = 3.0
+
 /**
  * Full fixed-point cascade unlock.
  * Fetches all nodes + dependencies once, then repeatedly marks locked nodes
- * as 'unlocked' if every prerequisite has masteryLevel >= 1 — until
+ * as 'unlocked' if every prerequisite has masteryLevel >= UNLOCK_THRESHOLD — until
  * no more nodes change in a pass. Batch-writes all changes in one query.
  */
 export async function cascadeUnlock(): Promise<number> {
@@ -31,7 +34,7 @@ export async function cascadeUnlock(): Promise<number> {
       if (statusMap.get(id) !== 'locked') continue
       const prereqs = prereqsOf.get(id) ?? []
       if (prereqs.length === 0) continue  // no prereqs → seeder should have started it unlocked
-      if (prereqs.every(pid => (masteryMap.get(pid) ?? 0) >= 1)) {
+      if (prereqs.every(pid => (masteryMap.get(pid) ?? 0) >= UNLOCK_THRESHOLD)) {
         statusMap.set(id, 'unlocked')
         changed = true
       }

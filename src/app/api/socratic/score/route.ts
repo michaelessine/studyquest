@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { claudeJSON, HAIKU } from '@/lib/claude'
-import { cascadeUnlock } from '@/lib/unlock'
-import { incrementMastery, getNextReviewDate, getReviewIntervalDays } from '@/lib/spacedRepetition'
+import { applyMasteryGain, teachDebateDelta } from '@/lib/mastery'
 
 type Turn = { role: 'user' | 'claude'; text: string }
 type SocraticScore = { score: number; insights: string; gaps: string; nextStepRecommendation: string }
@@ -33,25 +32,15 @@ Return ONLY JSON: { "score": number, "insights": string, "gaps": string, "nextSt
     data: { skillNodeId, turns: (turns ?? []) as Prisma.InputJsonValue, sessionScore: result.score },
   })
 
-  // Socratic: +0.5 if >=70, +1.0 if >=85
+  // PART 3: socratic uses the teach/debate delta table, 4.0 cap (logged as 'teach')
   let newMasteryLevel: number | null = null
-  const delta = result.score >= 85 ? 1.0 : result.score >= 70 ? 0.5 : 0
+  let capped = false
+  const delta = teachDebateDelta(result.score)
   if (delta > 0) {
-    const node = await prisma.skillNode.findUnique({ where: { id: skillNodeId }, select: { masteryLevel: true } })
-    if (node && node.masteryLevel < 5) {
-      const newLevel = incrementMastery(node.masteryLevel, delta)
-      await prisma.skillNode.update({
-        where: { id: skillNodeId },
-        data: {
-          masteryLevel: newLevel, status: newLevel >= 5 ? 'mastered' : 'in_progress',
-          masteryUpdatedAt: new Date(),
-          nextReviewAt: getNextReviewDate(newLevel), reviewIntervalDays: getReviewIntervalDays(newLevel),
-        },
-      })
-      newMasteryLevel = newLevel
-      await cascadeUnlock()
-    }
+    const res = await applyMasteryGain({ skillNodeId, eventType: 'teach', score: result.score, delta })
+    newMasteryLevel = res.newMasteryLevel
+    capped = res.capped
   }
 
-  return NextResponse.json({ ...result, newMasteryLevel })
+  return NextResponse.json({ ...result, newMasteryLevel, capped })
 }

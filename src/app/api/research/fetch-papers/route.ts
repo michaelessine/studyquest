@@ -29,7 +29,7 @@ Return ONLY JSON: { "papers": [{ "title": string, "url": string (real arxiv or s
 
   let papers: Paper[]
   try {
-    const result = await claudeJSON<{ papers: Paper[] }>({ system, user: `Find papers on ${topicName}.`, cacheSystem: true, route: 'research/fetch-papers', maxTokens: 2000 })
+    const result = await claudeJSON<{ papers: Paper[] }>({ system, user: `Find papers on ${topicName}.`, cacheSystem: true, route: 'research/fetch-papers', maxTokens: 1400 })
     papers = result.papers ?? []
     if (papers.length === 0) throw new Error('No papers')
   } catch (err) {

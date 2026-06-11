@@ -32,6 +32,16 @@ export const CONNECTIONS: Connection[] = [
   { topicA: 'Quantum Computing',        subjectA: 'QuantumMechanics', topicB: 'Quantum Machine Learning',   subjectB: 'QuantumMechanics', explanation: 'Quantum ML explores speedups for learning algorithms using quantum circuits and variational methods.' },
   { topicA: 'Probability theory',       subjectA: 'Mathematics',     topicB: 'Information Security',        subjectB: 'ComputerScience', explanation: 'Probabilistic analysis underpins cryptographic security proofs and differential privacy.' },
   { topicA: 'Linear algebra',           subjectA: 'Mathematics',     topicB: 'Computer Vision',             subjectB: 'ComputerScience', explanation: 'Image transformations (rotations, projections) and convolutional filters are linear maps.' },
+  // ── Connections for newly added topics ──────────────────────────────────────
+  { topicA: 'Control theory',           subjectA: 'Mathematics',     topicB: 'Reinforcement Learning',      subjectB: 'ComputerScience', explanation: 'Optimal control and the Bellman equation are the continuous-time roots of RL.' },
+  { topicA: 'Category theory',          subjectA: 'Mathematics',     topicB: 'Haskell',                     subjectB: 'ComputerScience', explanation: 'Functors, monads and morphisms from category theory are first-class abstractions in Haskell.' },
+  { topicA: 'Computational complexity', subjectA: 'ComputerScience', topicB: 'Quantum complexity theory',   subjectB: 'ComputerScience', explanation: 'Quantum complexity studies BQP and how quantum resources reshape the complexity hierarchy.' },
+  { topicA: 'Cryptography',             subjectA: 'Mathematics',     topicB: 'Applied cryptography',        subjectB: 'ComputerScience', explanation: 'Number-theoretic hardness assumptions become real protocols (TLS, signatures) in applied crypto.' },
+  { topicA: 'Probability theory',       subjectA: 'Mathematics',     topicB: 'Randomized algorithms',       subjectB: 'ComputerScience', explanation: 'Randomized algorithms trade certainty for speed using probabilistic analysis and concentration bounds.' },
+  { topicA: 'Reinforcement Learning',   subjectA: 'ComputerScience', topicB: 'Multiagent learning',         subjectB: 'ComputerScience', explanation: 'Multiagent learning extends single-agent RL to game-theoretic, non-stationary environments.' },
+  { topicA: 'LLMs',                     subjectA: 'ComputerScience', topicB: 'AI agents',                   subjectB: 'ComputerScience', explanation: 'Modern AI agents wrap LLMs with planning, memory and tool use to act autonomously.' },
+  { topicA: 'Quantum Computing',        subjectA: 'QuantumMechanics', topicB: 'Quantum complexity theory',  subjectB: 'ComputerScience', explanation: 'Quantum complexity theory formalises which problems quantum computers can actually speed up.' },
+  { topicA: 'Cybersecurity',            subjectA: 'ComputerScience', topicB: 'Hacking (offensive security)', subjectB: 'ComputerScience', explanation: 'Offensive security (ethical hacking) validates defenses by emulating real attacker techniques.' },
 ]
 
 /** Return only connections where both topics exist in the provided name set */

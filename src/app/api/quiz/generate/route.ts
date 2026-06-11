@@ -8,19 +8,14 @@ import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 type Question = { id: string; type: string; question: string; options?: string[]; correctAnswer: string; explanation: string }
 
 // Fix 2: static system prompt (identical across requests → cacheable)
+// Cost saver: no "explanation" field (never shown); compact options.
 const QUIZ_SYSTEM = `You are an expert tutor generating quizzes.
-Return ONLY a JSON object, no preamble:
-{
-  "quizType": "practice" | "exam",
-  "questions": [
-    { "id": "q1", "type": "multiple_choice", "question": "...", "options": ["A) ...","B) ...","C) ...","D) ..."], "correctAnswer": "A) ...", "explanation": "..." },
-    { "id": "q6", "type": "short_answer", "question": "...", "correctAnswer": "Model answer: ...", "explanation": "..." }
-  ]
-}
-Rules:
-- Vary difficulty within the requested tier (Basic = recall, Intermediate = application, Advanced = synthesis/applied).
-- Multiple choice options must be plausible; exactly one correct.
-- For short answer, provide a concise model answer in correctAnswer.`
+Return ONLY compact JSON, no preamble:
+{ "questions": [
+  { "id":"q1","type":"multiple_choice","question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A) ..." },
+  { "id":"q6","type":"short_answer","question":"...","correctAnswer":"<concise model answer>" }
+] }
+Rules: vary difficulty within the requested tier (Basic=recall, Intermediate=application, Advanced=synthesis). MC options plausible, exactly one correct. Keep questions and answers concise.`
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -67,8 +62,9 @@ export async function POST(req: NextRequest) {
   const avg = recentScores.length ? recentScores.reduce((a, b) => a + b, 0) / recentScores.length : null
   const difficulty = avg === null ? 'Intermediate' : avg >= 85 ? 'Advanced' : avg >= 70 ? 'Intermediate' : 'Basic'
 
-  const numQuestions = questionCount ?? (quizType === 'exam' ? 20 : 8)
-  const mcCount = quizType === 'exam' ? 13 : Math.ceil(numQuestions * 0.6)
+  // Cost saver: 6-question practice quiz (was 8); exam stays comprehensive
+  const numQuestions = questionCount ?? (quizType === 'exam' ? 20 : 6)
+  const mcCount = quizType === 'exam' ? 14 : Math.ceil(numQuestions * 0.66)
   const saCount = numQuestions - mcCount
 
   // Dynamic context goes in the user message (keeps system prompt cacheable)
@@ -83,7 +79,7 @@ Generate ${numQuestions} questions: ${mcCount} multiple choice and ${saCount} sh
       model: HAIKU,            // Fix 1
       cacheSystem: true,       // Fix 2
       route: 'quiz/generate',  // Fix 10
-      maxTokens: 3000,
+      maxTokens: quizType === 'exam' ? 2600 : 1100,  // right-sized to question count
     })
     questions = parsed.questions ?? []
     if (!Array.isArray(questions) || questions.length === 0) throw new Error('No questions')

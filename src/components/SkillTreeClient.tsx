@@ -12,6 +12,7 @@ import { useToast } from './ToastProvider'
 import StarRating from './StarRating'
 import QuizPanel from './QuizPanel'
 import LearningToolsPanel from './LearningToolsPanel'
+import TechniqueTips from './TechniqueTips'
 
 const ReactFlow  = dynamic(() => import('@xyflow/react').then(m => m.ReactFlow),  { ssr: false, loading: () => <div className="flex items-center justify-center h-full gap-3 text-gray-500"><Loader2 size={28} className="animate-spin text-purple-500" /><span className="text-sm">Loading…</span></div> })
 const Background = dynamic(() => import('@xyflow/react').then(m => m.Background), { ssr: false })
@@ -189,6 +190,13 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpd
             ))}
           </div>
         </div>
+
+        {/* Study techniques (PART 10) */}
+        {node.status !== 'locked' && (
+          <div className="border-t border-gray-800 pt-4">
+            <TechniqueTips key={node.id} topic={node.name} level={node.masteryLevel} />
+          </div>
+        )}
 
         {/* Quiz & practice */}
         {node.status !== 'locked' && (

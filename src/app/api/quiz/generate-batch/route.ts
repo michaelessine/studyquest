@@ -7,9 +7,10 @@ import { checkRateLimit, checkMonthlyCap } from '@/lib/rateLimit'
 
 type Question = { id: string; type: string; question: string; options?: string[]; correctAnswer: string; explanation: string }
 
-const BATCH_SYSTEM = `You are an expert tutor generating quizzes for multiple topics at once.
-Return ONLY JSON: { "quizzes": [ { "topicId": string, "questions": [ {"id","type":"multiple_choice"|"short_answer","question","options"?,"correctAnswer","explanation"} ] } ] }
-For each topic generate 6 questions (4 multiple choice, 2 short answer). Vary difficulty. Use the exact topicId given.`
+// Cost saver: compact schema (no explanation), 5 questions/topic.
+const BATCH_SYSTEM = `You generate quizzes for multiple topics at once.
+Return ONLY compact JSON: { "quizzes":[ {"topicId":"<exact id>","questions":[ {"id","type":"multiple_choice"|"short_answer","question","options"?,"correctAnswer"} ]} ] }
+Per topic: 5 questions (3 MC, 2 short answer). Concise. Use the exact topicId given.`
 
 export async function POST(req: NextRequest) {
   const { topics, subject } = await req.json()
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       model: HAIKU,                  // Fix 1
       cacheSystem: true,             // Fix 2
       route: 'quiz/generate-batch',  // Fix 10
-      maxTokens: 4000,
+      maxTokens: 3200,   // 5 topics × 5 compact questions
     })
   } catch (err) {
     console.error('Batch quiz error:', err)

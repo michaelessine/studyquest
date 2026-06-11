@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings } from 'lucide-react'
+import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings, FileText, Brain, ClipboardCheck, Briefcase, TrendingUp } from 'lucide-react'
 
 const links = [
   { href: '/',               label: 'Dashboard',      icon: LayoutDashboard },
@@ -10,7 +10,12 @@ const links = [
   { href: '/topics',         label: 'Topics',         icon: List },
   { href: '/learning-paths', label: 'Learning Paths', icon: Route },
   { href: '/quiz',           label: 'Quiz',           icon: GraduationCap },
+  { href: '/real-exam',      label: 'Real Exam',      icon: ClipboardCheck },
+  { href: '/exercises',      label: 'Exercises',      icon: FileText },
   { href: '/analytics',      label: 'Analytics',      icon: BarChart3 },
+  { href: '/progress',       label: 'Progress',       icon: TrendingUp },
+  { href: '/learning-ability', label: 'Learning Ability', icon: Brain },
+  { href: '/career',         label: 'Career',         icon: Briefcase },
   { href: '/schedule',       label: 'Schedule',       icon: Calendar },
   { href: '/techniques',     label: 'Techniques',     icon: FlaskConical },
   { href: '/chat',           label: 'AI Chat',        icon: MessageCircle },

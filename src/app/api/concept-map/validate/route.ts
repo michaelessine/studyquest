@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { claudeJSON } from '@/lib/claude'
+import { claudeJSON, HAIKU } from '@/lib/claude'
 
 type Connection = { fromNodeId: string; toNodeId: string; fromName?: string; toName?: string; explanation: string }
 type ValidationResult = {
@@ -27,7 +27,7 @@ Return ONLY JSON: { "validConnections": { "<index>": true|false }, "missingConne
 
   let result: ValidationResult
   try {
-    result = await claudeJSON<ValidationResult>({ system, user: 'Validate this concept map.', route: 'concept-map/validate', maxTokens: 1500 })
+    result = await claudeJSON<ValidationResult>({ system, user: 'Validate this concept map.', model: HAIKU, route: 'concept-map/validate', maxTokens: 1000 })
   } catch (err) {
     console.error('Concept map validation error:', err)
     return NextResponse.json({ error: 'Failed to validate' }, { status: 500 })
