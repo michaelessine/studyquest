@@ -7,23 +7,24 @@ export type MasteryEventType = 'quiz' | 'exam' | 'real_exam' | 'exercise' | 'man
 
 const SOFT_CAP = 4.0 // max reachable from quizzes/exercises/teach/debate alone
 
-// ── Delta tables ──────────────────────────────────────────────────────────────
+// ── Delta tables ────────────────────────────────────────────────────────────
+// Tuned down ~50% so mastery is earned more slowly (stays on a 0.25 grid).
 export function quizDelta(score: number): number {
-  if (score >= 90) return 0.75
-  if (score >= 80) return 0.5
+  if (score >= 90) return 0.5
+  if (score >= 80) return 0.25
   if (score >= 70) return 0.25
   return 0
 }
 export function exerciseDelta(pctSolved: number): number {
-  if (pctSolved >= 100) return 1.0
-  if (pctSolved >= 90)  return 0.75
-  if (pctSolved >= 80)  return 0.5
+  if (pctSolved >= 100) return 0.5
+  if (pctSolved >= 90)  return 0.5
+  if (pctSolved >= 80)  return 0.25
   return 0
 }
 export function teachDebateDelta(score: number): number {
-  if (score >= 90) return 1.0
-  if (score >= 80) return 0.75
-  if (score >= 70) return 0.5
+  if (score >= 90) return 0.5
+  if (score >= 80) return 0.5
+  if (score >= 70) return 0.25
   return 0
 }
 
@@ -68,9 +69,9 @@ export async function applyMasteryGain(opts: {
   eventType: MasteryEventType
   score: number       // 0–100
   delta: number       // raw star gain before capping
-}): Promise<{ newMasteryLevel: number; capped: boolean; gain: number }> {
+}): Promise<{ newMasteryLevel: number; capped: boolean; gain: number; unlockedNames: string[] }> {
   const node = await prisma.skillNode.findUnique({ where: { id: opts.skillNodeId }, select: { masteryLevel: true } })
-  if (!node) return { newMasteryLevel: 0, capped: false, gain: 0 }
+  if (!node) return { newMasteryLevel: 0, capped: false, gain: 0, unlockedNames: [] }
 
   // Always log the event (even zero-gain attempts, for history/qualification)
   await prisma.masteryEvent.create({
@@ -98,7 +99,7 @@ export async function applyMasteryGain(opts: {
       nextReviewAt: getNextReviewDate(target), reviewIntervalDays: getReviewIntervalDays(target),
     },
   })
-  await cascadeUnlock()
+  const unlocked = await cascadeUnlock()
 
-  return { newMasteryLevel: target, capped, gain: round25(target - current) }
+  return { newMasteryLevel: target, capped, gain: round25(target - current), unlockedNames: unlocked.map(u => u.name) }
 }

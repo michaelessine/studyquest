@@ -555,7 +555,7 @@ async function main() {
   // and any cross-subject prereqs that were already satisfied get propagated
   console.log('  Running cascade unlock...')
   const unlocked = await cascadeUnlock()
-  console.log(`  ✓ ${unlocked} nodes unlocked by cascade`)
+  console.log(`  ✓ ${unlocked.length} nodes unlocked by cascade`)
 
   console.log('\n✅ Seed complete!')
 }

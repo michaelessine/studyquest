@@ -4,6 +4,7 @@ import { differenceInDays, format } from 'date-fns'
 import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle, GraduationCap, Route } from 'lucide-react'
 import Link from 'next/link'
 import DashboardClient from '@/components/DashboardClient'
+import QuickLog from '@/components/QuickLog'
 
 function urgencyClass(d: number) {
   return d <= 2 ? 'text-red-400' : d <= 5 ? 'text-yellow-400' : 'text-gray-400'
@@ -86,6 +87,9 @@ export default async function DashboardPage() {
 
       {/* Client-only features: weekly review banner + connections feed */}
       <DashboardClient skillNodes={plainSkillNodes} />
+
+      {/* Frictionless study logging */}
+      <QuickLog />
 
       {/* In progress — pinned learning path */}
       {pinnedPathView && (

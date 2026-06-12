@@ -3,6 +3,6 @@ import { NextResponse } from 'next/server'
 import { cascadeUnlock } from '@/lib/unlock'
 
 export async function POST() {
-  const unlocked = await cascadeUnlock()
-  return NextResponse.json({ unlocked })
+  const unlockedNodes = await cascadeUnlock()
+  return NextResponse.json({ unlocked: unlockedNodes.length, unlockedNames: unlockedNodes.map(u => u.name) })
 }

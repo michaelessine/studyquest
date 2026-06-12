@@ -2,19 +2,20 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { format, startOfWeek, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns'
-import { ChevronLeft, ChevronRight, Plus, Loader2, CheckCircle2, Circle, Clock, BookOpen, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Loader2, CheckCircle2, Circle, Clock, BookOpen, CalendarDays, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ToastProvider'
+import QuickLog from '@/components/QuickLog'
 
 type Deadline = {
   id: string; title: string; type: string
   dueDate: string; completed: boolean; xpValue: number
   course: { name: string; code: string | null }
 }
+// Unified study log (topic-linked StudySession)
 type Session = {
-  id: string; rawNote: string; durationMins: number
-  xpEarned: number; loggedAt: string
-  course: { name: string } | null
+  id: string; durationMins: number; startTime: string
+  topicName: string | null; subject: string | null; note: string | null
 }
 
 const TYPE_BADGE: Record<string, string> = {
@@ -33,9 +34,6 @@ export default function SchedulePage() {
   const [loading, setLoading]     = useState(true)
 
   const [showLog, setShowLog]     = useState(false)
-  const [logNote, setLogNote]     = useState('')
-  const [logMins, setLogMins]     = useState('60')
-  const [logSaving, setLogSaving] = useState(false)
 
   const [showDl, setShowDl]     = useState(false)
   const [dlTitle, setDlTitle]   = useState('')
@@ -53,11 +51,11 @@ export default function SchedulePage() {
     setLoading(true)
     const [dlRes, sessRes, courseRes] = await Promise.all([
       fetch('/api/deadlines').then(r => r.json()),
-      fetch('/api/sessions').then(r => r.json()),
+      fetch('/api/log-study?limit=200').then(r => r.json()),
       fetch('/api/courses').then(r => r.json()),
     ])
     setDeadlines(dlRes.deadlines ?? [])
-    setSessions(sessRes.sessions ?? [])
+    setSessions(sessRes.logs ?? [])
     setCourses(courseRes.courses ?? [])
     if (!dlCourse && courseRes.courses?.length > 0) setDlCourse(courseRes.courses[0].id)
     setLoading(false)
@@ -77,19 +75,6 @@ export default function SchedulePage() {
     load()
   }
 
-  async function saveSession() {
-    setLogSaving(true)
-    const mins = parseInt(logMins)
-    const xpEarned = Math.round((mins / 30) * 10)
-    await fetch('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rawNote: logNote, durationMins: mins, xpEarned }),
-    })
-    showToast('info', `${mins}m study session logged`)
-    setLogSaving(false); setShowLog(false); setLogNote(''); setLogMins('60')
-    load(); router.refresh()
-  }
 
   async function saveDeadline() {
     setDlSaving(true)
@@ -107,7 +92,7 @@ export default function SchedulePage() {
 
   // ── Weekly summary stats ─────────────────────────────────────────────────
   const weekInterval = { start: weekStart, end: addDays(weekEnd, 1) }
-  const weekSessions  = sessions.filter(s => isWithinInterval(parseISO(s.loggedAt), weekInterval))
+  const weekSessions  = sessions.filter(s => isWithinInterval(parseISO(s.startTime), weekInterval))
   const weekDeadlines = deadlines.filter(d => isWithinInterval(parseISO(d.dueDate), weekInterval))
   const totalMins     = weekSessions.reduce((sum, s) => sum + s.durationMins, 0)
   const completedDls  = weekDeadlines.filter(d => d.completed).length
@@ -165,7 +150,7 @@ export default function SchedulePage() {
             {days.map(day => {
               const isToday = isSameDay(day, new Date())
               const dayDeadlines = deadlines.filter(d => isSameDay(parseISO(d.dueDate), day))
-              const daySessions  = sessions.filter(s => isSameDay(parseISO(s.loggedAt), day))
+              const daySessions  = sessions.filter(s => isSameDay(parseISO(s.startTime), day))
 
               return (
                 <div
@@ -204,10 +189,10 @@ export default function SchedulePage() {
 
                   {/* Sessions */}
                   {daySessions.map(s => (
-                    <div key={s.id} title={s.rawNote}
+                    <div key={s.id} title={s.note ?? ''}
                       className="rounded-md px-2 py-1.5 text-xs bg-indigo-900/40 text-indigo-300">
                       <div className="font-medium line-clamp-2 whitespace-normal leading-tight">
-                        📚 {s.durationMins}m session
+                        📚 {s.durationMins}m{s.topicName ? ` · ${s.topicName}` : ''}
                       </div>
                     </div>
                   ))}
@@ -273,33 +258,15 @@ export default function SchedulePage() {
         </>
       )}
 
-      {/* ── Log Session modal ─────────────────────────────────────────────── */}
+      {/* ── Log Study modal (unified QuickLog) ────────────────────────────── */}
       {showLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowLog(false)} />
-          <div className="relative bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-6 space-y-4">
-            <h2 className="font-semibold text-gray-100">Log Study Session</h2>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Duration (minutes)</label>
-              <input type="number" value={logMins} onChange={e => setLogMins(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Notes</label>
-              <textarea value={logNote} onChange={e => setLogNote(e.target.value)}
-                placeholder="What did you study?" rows={3}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600 resize-none" />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowLog(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300">
-                Cancel
-              </button>
-              <button onClick={saveSession} disabled={!logNote || logSaving}
-                className="flex-1 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 rounded-lg text-sm text-white flex items-center justify-center gap-2">
-                {logSaving ? <Loader2 size={14} className="animate-spin" /> : null}
-                Save
-              </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setShowLog(false); load() }} />
+          <div className="relative w-full max-w-md mt-10">
+            <button onClick={() => { setShowLog(false); load() }} className="absolute -top-8 right-0 text-gray-400 hover:text-gray-200 flex items-center gap-1 text-xs">
+              <X size={14} /> Close
+            </button>
+            <QuickLog />
           </div>
         </div>
       )}

@@ -9,9 +9,9 @@ export const UNLOCK_THRESHOLD = 3.0
  * as 'unlocked' if every prerequisite has masteryLevel >= UNLOCK_THRESHOLD — until
  * no more nodes change in a pass. Batch-writes all changes in one query.
  */
-export async function cascadeUnlock(): Promise<number> {
+export async function cascadeUnlock(): Promise<{ id: string; name: string }[]> {
   const [nodes, deps] = await Promise.all([
-    prisma.skillNode.findMany({ select: { id: true, status: true, masteryLevel: true } }),
+    prisma.skillNode.findMany({ select: { id: true, name: true, status: true, masteryLevel: true } }),
     prisma.skillDependency.findMany({ select: { prerequisiteId: true, dependentId: true } }),
   ])
 
@@ -42,9 +42,9 @@ export async function cascadeUnlock(): Promise<number> {
   }
 
   // Batch-write all newly unlocked nodes
-  const toUnlock = nodes.filter(n => n.status === 'locked' && statusMap.get(n.id) === 'unlocked').map(n => n.id)
-  if (toUnlock.length > 0) {
-    await prisma.skillNode.updateMany({ where: { id: { in: toUnlock } }, data: { status: 'unlocked' } })
+  const unlocked = nodes.filter(n => n.status === 'locked' && statusMap.get(n.id) === 'unlocked').map(n => ({ id: n.id, name: n.name }))
+  if (unlocked.length > 0) {
+    await prisma.skillNode.updateMany({ where: { id: { in: unlocked.map(u => u.id) } }, data: { status: 'unlocked' } })
   }
-  return toUnlock.length
+  return unlocked
 }

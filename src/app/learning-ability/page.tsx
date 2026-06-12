@@ -1,57 +1,77 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Brain, Target, BatteryCharging, HeartPulse, BookOpen, Flame, Apple, Sparkles, Plus, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { Loader2, Brain, Target, BatteryCharging, HeartPulse, BookOpen, Flame, Apple, Sparkles, Plus, X, ChevronDown, ChevronRight, Moon, Utensils, Dumbbell } from 'lucide-react'
 
-// ── Static ability content ────────────────────────────────────────────────────
-type ScoreField = 'neuroplasticityScore' | 'focusScore' | 'recoveryScore' | 'mentalHealthScore'
+// ── Static, informational ability content ─────────────────────────────────────
 type AbilityDef = {
-  key: 'neuro' | 'focus' | 'recovery' | 'mental'
-  scoreField: ScoreField
-  title: string; icon: React.ReactNode; info: string
+  key: string
+  title: string; icon: React.ReactNode; info: string; why: string
   tips: string[]; habits: string; avoid: string[]
 }
 
 const ABILITIES: AbilityDef[] = [
   {
-    key: 'neuro', scoreField: 'neuroplasticityScore',
+    key: 'neuro',
     title: 'Neuroplasticity', icon: <Brain size={16} className="text-orange-400" />,
-    info: "Neuroplasticity is your brain's ability to form new connections. Strong neuroplasticity lets you learn faster and recover from setbacks.",
-    tips: ['Challenge yourself with novel topics', 'Learn multiple ways (multimodal)', 'Embrace mistakes as learning', 'Sleep 7-9 hours for consolidation', 'Exercise boosts BDNF (brain-derived neurotrophic factor)', 'Meditation increases gray matter'],
-    habits: 'Weekly: try a new topic | Daily: 20-min meditation | 3x/week: 30-min exercise',
-    avoid: ['Multitasking during study (kills consolidation)', 'All-nighters (prevents sleep consolidation)', 'Passive re-reading (low retention)', 'Comfort zone only (no neuroplasticity)', 'Stress without recovery (burns out plasticity)'],
+    info: "Neuroplasticity is your brain's ability to form and reorganize neural connections. Strong plasticity lets you learn faster and recover from setbacks.",
+    why: 'Each time you struggle with something new, you trigger synaptic growth. Sleep and exercise then physically consolidate those connections — learning is a build-and-cement cycle.',
+    tips: ['Challenge yourself with novel topics — difficulty drives growth', 'Learn the same idea multiple ways (read, watch, do, teach)', 'Embrace mistakes — error-correction is when wiring strengthens', 'Sleep 7-9 hours for memory consolidation', 'Exercise boosts BDNF (brain-derived neurotrophic factor)', 'Meditation measurably increases gray matter', 'Space practice over days rather than cramming'],
+    habits: 'Weekly: try a genuinely new topic | Daily: 20-min meditation | 3x/week: 30-min exercise',
+    avoid: ['Multitasking during study (kills consolidation)', 'All-nighters (block sleep consolidation)', 'Passive re-reading (low retention)', 'Staying in your comfort zone (no plasticity without challenge)', 'Chronic stress without recovery (burns out plasticity)'],
   },
   {
-    key: 'focus', scoreField: 'focusScore',
-    title: 'Focus', icon: <Target size={16} className="text-blue-400" />,
-    info: 'Deep focus enables high-quality learning. Protect your focus from distractions.',
-    tips: ['Pomodoro technique (25 min focus + 5 min break)', 'Eliminate notifications and phone', 'Task batching (group similar work)', 'Environment matters (quiet, comfortable)', 'Caffeine timing (after 30 mins into session)', 'Start with hardest task first'],
-    habits: 'Daily: 2-4 focused sessions | Weekly: block distraction-free time | Monthly: audit phone/app usage',
-    avoid: ['Context switching (costs 15-25 min to refocus)', 'Social media during study', 'Open browser tabs', 'Studying in noisy environments', 'Studying on bed/couch (associate desk with work)'],
+    key: 'focus',
+    title: 'Focus & Deep Work', icon: <Target size={16} className="text-blue-400" />,
+    info: 'Deep, undistracted focus is what turns study time into actual learning. Protect it ruthlessly.',
+    why: 'It takes 15-25 minutes to fully re-enter deep focus after an interruption. A single phone check can quietly cost you half an hour of real work.',
+    tips: ['Pomodoro: 25 min focus + 5 min break (or 50/10 for deep tasks)', 'Phone in another room, notifications off', 'Batch similar tasks to avoid context-switching', 'A consistent, quiet environment cues your brain to focus', 'Time caffeine ~30 min into a session, not before', 'Start with the hardest task while willpower is fresh', 'Define one clear outcome before you begin'],
+    habits: 'Daily: 2-4 focused blocks | Weekly: schedule distraction-free deep-work time | Monthly: audit app/phone usage',
+    avoid: ['Context switching (15-25 min refocus cost each time)', 'Social media during study', 'Dozens of open browser tabs', 'Noisy environments', 'Studying on a bed/couch (keep a dedicated work spot)'],
   },
   {
-    key: 'recovery', scoreField: 'recoveryScore',
-    title: 'Recovery', icon: <BatteryCharging size={16} className="text-green-400" />,
-    info: "Recovery isn't laziness—it's when your brain consolidates learning. Prioritize sleep, rest days, and exercise.",
-    tips: ['Sleep 7-9 hours (90-min sleep cycles)', 'Take 1-2 rest days per week', 'Exercise 3-5x/week (aerobic + strength)', 'Nutrition (protein, omega-3s, antioxidants)', 'Cold exposure can boost recovery', 'Massage and stretching'],
-    habits: 'Bedtime: consistent sleep schedule | Weekly: 1 rest day | Daily: 30 min movement | Weekly: meal prep',
-    avoid: ['All-nighters', 'Studying every day (no recovery)', 'Excessive caffeine (disrupts sleep)', 'Sedentary lifestyle', 'Eating processed food before sleep'],
+    key: 'recovery',
+    title: 'Recovery & Rest', icon: <BatteryCharging size={16} className="text-green-400" />,
+    info: "Recovery isn't laziness — it's when your brain consolidates everything you studied. Treat rest as part of the work.",
+    why: 'Memories move from short-term to long-term storage largely during deep sleep and downtime. Skip recovery and you literally fail to keep what you learned.',
+    tips: ['Sleep 7-9 hours, aligned to 90-min cycles', 'Take 1-2 full rest days per week', 'Exercise 3-5x/week (mix aerobic + strength)', 'Eat protein, omega-3s, and antioxidants', 'Sunlight early in the day sets your circadian rhythm', 'Short naps (10-20 min) restore focus', 'Stretch / light movement on rest days'],
+    habits: 'Bedtime: consistent schedule | Weekly: 1 true rest day | Daily: 30 min movement | Weekly: meal prep',
+    avoid: ['All-nighters', 'Studying every single day with no recovery', 'Excessive caffeine (disrupts sleep depth)', 'A sedentary lifestyle', 'Heavy/processed food right before sleep'],
   },
   {
-    key: 'mental', scoreField: 'mentalHealthScore',
+    key: 'mental',
     title: 'Mental Health & Stress', icon: <HeartPulse size={16} className="text-red-400" />,
-    info: 'Chronic stress impairs learning and memory. Manage stress proactively.',
-    tips: ['Deep breathing (4-7-8 technique)', 'Journaling daily', 'Mindfulness meditation', 'Social connection (study groups)', 'Therapy or counseling if needed', 'Nature time', 'Gratitude practice'],
-    habits: 'Daily: 5-min breathing | Journaling 3x/week | Weekly: social time | Monthly: therapy check-in',
-    avoid: ['Isolating yourself', 'Bottling emotions', 'Comparing yourself to others', 'Overshooting deadlines', 'Perfectionism'],
+    info: 'Chronic stress shrinks memory capacity and impairs learning. Managing it is a study skill, not a distraction from one.',
+    why: 'Cortisol from prolonged stress damages the hippocampus — the brain region central to forming new memories. Calm is a precondition for learning, not a luxury.',
+    tips: ['Box / 4-7-8 breathing to down-regulate quickly', 'Journal to offload looping thoughts', 'Mindfulness meditation builds stress tolerance', 'Stay socially connected (study groups, friends)', 'Seek therapy or counseling when you need it', 'Time in nature lowers cortisol', 'Daily gratitude shifts baseline mood'],
+    habits: 'Daily: 5-min breathing | Journaling 3x/week | Weekly: real social time | Monthly: mental-health check-in',
+    avoid: ['Isolating yourself', 'Bottling up emotions', 'Comparing your progress to others', 'Chronically overcommitting', 'Perfectionism (done beats perfect)'],
+  },
+  {
+    key: 'sleep',
+    title: 'Sleep & Consolidation', icon: <Moon size={16} className="text-indigo-400" />,
+    info: 'Sleep is the single highest-leverage thing you can do for learning — it is when knowledge is filed and skills are rehearsed.',
+    why: 'Deep (slow-wave) sleep consolidates facts; REM sleep integrates and connects ideas. A night of good sleep after studying can improve recall by 20-40%.',
+    tips: ['Keep a fixed wake time, even on weekends', 'No screens 30-60 min before bed (blue light delays melatonin)', 'Cool, dark, quiet room', 'Study or review right before sleep for better retention', "Avoid caffeine after ~2pm", 'Get morning sunlight to anchor your rhythm'],
+    habits: 'Daily: same wake time | Nightly: wind-down routine | Pre-sleep: light review of the day’s material',
+    avoid: ['Irregular sleep/wake times', 'Late caffeine or alcohol', 'Doomscrolling in bed', 'Sacrificing sleep to cram (it backfires)'],
+  },
+  {
+    key: 'nutrition',
+    title: 'Nutrition & Brain Fuel', icon: <Utensils size={16} className="text-amber-400" />,
+    info: 'Your brain burns ~20% of your energy. What you eat directly affects focus, mood, and memory.',
+    why: 'Stable blood sugar means stable attention. Omega-3s build neuron membranes; hydration and micronutrients keep signaling sharp.',
+    tips: ['Protein + fiber meals for steady energy (avoid sugar spikes/crashes)', 'Omega-3s (fish, walnuts, flax) support neuron health', 'Stay hydrated — even mild dehydration hurts focus', 'Leafy greens & berries (antioxidants) protect the brain', 'Don’t study hungry or overly full', 'Limit ultra-processed food and excess sugar'],
+    habits: 'Daily: protein at each meal, water on the desk | Weekly: meal prep | Limit: sugary snacks while studying',
+    avoid: ['Sugary energy drinks (crash follows the spike)', 'Skipping meals then over-eating', 'Studying while very hungry', 'Relying on caffeine instead of food/sleep'],
   },
 ]
 
-type Ability = { neuroplasticityScore: number; focusScore: number; recoveryScore: number; mentalHealthScore: number; stressLevel: number }
 type Book = { title: string; author?: string; progress: number; notes?: string }
 type Habit = { name: string; streak: number }
 type Goals = { books: Book[]; disciplineHabits: Habit[]; healthHabits: string[]; spiritualGrowth: string[] }
 
-function AbilityCard({ def, score, onChange }: { def: AbilityDef; score: number; onChange: (v: number) => void }) {
+// Info-only card (no self-rating)
+function AbilityCard({ def }: { def: AbilityDef }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="card p-5">
@@ -59,20 +79,15 @@ function AbilityCard({ def, score, onChange }: { def: AbilityDef; score: number;
         <div className="shrink-0 mt-0.5">{def.icon}</div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-100">{def.title}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{def.info}</p>
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Self-rating</span><span className="text-orange-300 font-semibold">{score}/10</span>
-            </div>
-            <input type="range" min={1} max={10} value={score} onChange={e => onChange(parseInt(e.target.value))} className="w-full accent-orange-600" />
-          </div>
+          <p className="text-xs text-gray-400 mt-1">{def.info}</p>
+          <p className="text-xs text-gray-500 mt-2 italic">{def.why}</p>
           <button onClick={() => setOpen(o => !o)} className="mt-3 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
             {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Tips, habits & what to avoid
           </button>
           {open && (
             <div className="mt-3 space-y-3 text-xs">
               <div>
-                <div className="text-[10px] font-semibold text-green-400 uppercase mb-1">Tips to improve</div>
+                <div className="text-[10px] font-semibold text-green-400 uppercase mb-1">Tips</div>
                 <ul className="list-disc list-inside text-gray-400 space-y-0.5">{def.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
               </div>
               <div>
@@ -99,30 +114,19 @@ function AbilityCard({ def, score, onChange }: { def: AbilityDef; score: number;
 
 export default function LearningAbilityPage() {
   const [loading, setLoading] = useState(true)
-  const [ability, setAbility] = useState<Ability>({ neuroplasticityScore: 5, focusScore: 5, recoveryScore: 5, mentalHealthScore: 5, stressLevel: 5 })
   const [goals, setGoals] = useState<Goals>({ books: [], disciplineHabits: [], healthHabits: [], spiritualGrowth: [] })
   const [newBook, setNewBook] = useState({ title: '', author: '' })
   const [newHabit, setNewHabit] = useState('')
   const [newHealth, setNewHealth] = useState('')
-  const [newSpiritual, setNewSpiritual] = useState('')
+  const [newPersonal, setNewPersonal] = useState('')
 
   useEffect(() => {
-    Promise.all([fetch('/api/learning-ability').then(r => r.json()), fetch('/api/self-improvement').then(r => r.json())])
-      .then(([a, g]) => {
-        if (a.ability) setAbility({ neuroplasticityScore: a.ability.neuroplasticityScore, focusScore: a.ability.focusScore, recoveryScore: a.ability.recoveryScore, mentalHealthScore: a.ability.mentalHealthScore, stressLevel: a.ability.stressLevel })
+    fetch('/api/self-improvement').then(r => r.json())
+      .then(g => {
         if (g.goals) setGoals({ books: g.goals.books ?? [], disciplineHabits: g.goals.disciplineHabits ?? [], healthHabits: g.goals.healthHabits ?? [], spiritualGrowth: g.goals.spiritualGrowth ?? [] })
         setLoading(false)
       }).catch(() => setLoading(false))
   }, [])
-
-  const saveAbility = useCallback(async (next: Ability) => {
-    await fetch('/api/learning-ability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) })
-  }, [])
-
-  function setScore(field: AbilityDef['scoreField'], v: number) {
-    const next = { ...ability, [field]: v }
-    setAbility(next); saveAbility(next)
-  }
 
   const saveGoals = useCallback(async (next: Goals) => {
     setGoals(next)
@@ -131,35 +135,26 @@ export default function LearningAbilityPage() {
 
   if (loading) return <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-orange-500" /></div>
 
-  // Overall recommendation
-  const { focusScore, recoveryScore, mentalHealthScore } = ability
-  let recommendation = "You're balanced — keep a steady rhythm of focused work and real recovery."
-  if (focusScore - recoveryScore >= 3) recommendation = `Your focus is ${focusScore}/10 but recovery is ${recoveryScore}/10. You're burning out. Add 1-2 rest days and improve sleep to consolidate what you're learning. A well-rested brain learns 30% faster.`
-  else if (mentalHealthScore <= 4) recommendation = `Your mental health rating is ${mentalHealthScore}/10. Stress impairs memory — prioritize breathing, journaling, and social connection before pushing harder on study.`
-  else if (recoveryScore <= 4) recommendation = `Recovery is low (${recoveryScore}/10). Sleep and rest days are when learning consolidates — protect them.`
-
   const booksRead = goals.books.filter(b => b.progress >= 100).length
 
   return (
     <div className="p-5 md:p-8 max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-100">Learning Ability</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Rate yourself weekly. Optimize the conditions that make learning stick.</p>
+        <p className="text-sm text-gray-500 mt-0.5">The conditions that make learning stick — and the goals you&apos;re building toward.</p>
       </div>
 
-      {/* Section 1 */}
+      {/* Section 1 — informational */}
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Your Learning Ability</h2>
-        {ABILITIES.map(def => (
-          <AbilityCard key={def.key} def={def} score={ability[def.scoreField]} onChange={v => setScore(def.scoreField, v)} />
-        ))}
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">How Your Brain Learns Best</h2>
         <div className="card p-5 border-orange-700/40">
-          <h3 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Sparkles size={15} className="text-orange-400" /> Neuroplasticity System</h3>
-          <p className="text-sm text-gray-400">{recommendation}</p>
+          <h3 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Sparkles size={15} className="text-orange-400" /> The system in one line</h3>
+          <p className="text-sm text-gray-400">Challenge your brain (neuroplasticity) → with deep focus → then recover (sleep, rest, nutrition) → while keeping stress low. Skip any link and learning leaks out. A well-rested, low-stress brain can learn ~30% faster.</p>
         </div>
+        {ABILITIES.map(def => <AbilityCard key={def.key} def={def} />)}
       </section>
 
-      {/* Section 2 */}
+      {/* Section 2 — self-improvement (interactive, unchanged) */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Self-Improvement Goals</h2>
 
@@ -217,10 +212,10 @@ export default function LearningAbilityPage() {
           </div>
         </div>
 
-        {/* Health & Spiritual — simple lists */}
+        {/* Health & Personal — simple lists */}
         {([
           { title: 'Health Habits', icon: <Apple size={15} className="text-green-400" />, items: goals.healthHabits, val: newHealth, setVal: setNewHealth, key: 'healthHabits' as const, placeholder: 'e.g. 5 servings of vegetables daily' },
-          { title: 'Spiritual Growth', icon: <Sparkles size={15} className="text-indigo-400" />, items: goals.spiritualGrowth, val: newSpiritual, setVal: setNewSpiritual, key: 'spiritualGrowth' as const, placeholder: 'e.g. Daily meditation, journaling' },
+          { title: 'Personal Growth', icon: <Dumbbell size={15} className="text-indigo-400" />, items: goals.spiritualGrowth, val: newPersonal, setVal: setNewPersonal, key: 'spiritualGrowth' as const, placeholder: 'e.g. Daily meditation, journaling, a new skill' },
         ]).map(sec => (
           <div key={sec.key} className="card p-5">
             <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2">{sec.icon} {sec.title}</h3>

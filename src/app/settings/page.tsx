@@ -19,11 +19,16 @@ export default function SettingsPage() {
 
   async function load() {
     setLoading(true)
-    const res = await fetch('/api/costs/summary')
-    const d = await res.json()
-    setData(d)
-    setCapInput(String(d.cap?.cap ?? 5))
-    setLoading(false)
+    try {
+      const res = await fetch('/api/costs/summary')
+      const d = await res.json()
+      setData(d)
+      setCapInput(String(d.cap?.cap ?? 5))
+    } catch {
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 

@@ -36,8 +36,8 @@ function nodeStyle(ml: number, status: string): string {
   if (ml >= 5) return 'bg-green-900/70 border-green-600 text-green-200 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
   if (ml >= 3) return 'bg-orange-900/70 border-orange-600 text-orange-200 shadow-[0_0_12px_rgba(234,88,12,0.3)]'
   if (ml >= 1) return 'bg-blue-900/70 border-blue-600 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.25)]'
-  if (status === 'unlocked') return 'bg-gray-800/80 border-gray-500 text-gray-300'
-  return 'bg-gray-800/50 border-gray-700 text-gray-600'
+  if (status === 'unlocked' || status === 'in_progress') return 'bg-gray-800/90 border-orange-700/50 text-gray-200 shadow-[0_0_6px_rgba(234,88,12,0.12)]' // available now
+  return 'bg-gray-800/40 border-gray-800 text-gray-600 opacity-70' // locked
 }
 
 function SkillNodeComponent({ data }: NodeProps) {
@@ -259,12 +259,15 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
   const handleRate = useCallback(async (id: string, ml: number) => {
     setSaving(true)
     try {
-      await fetch(`/api/topics/${id}`, {
+      const res = await fetch(`/api/topics/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'skillNode', masteryLevel: ml }),
       })
+      const data = await res.json().catch(() => ({}))
       if (ml >= 5) showToast('info', 'Topic mastered! ★★★★★')
+      const unlocked: string[] = data.unlockedNames ?? []
+      if (unlocked.length > 0) showToast('info', `🔓 Unlocked: ${unlocked.slice(0, 4).join(', ')}${unlocked.length > 4 ? ` +${unlocked.length - 4} more` : ''}`)
       router.refresh()
     } finally {
       setSaving(false)
@@ -303,8 +306,8 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
       {/* Legend row */}
       {stat && (
         <div className="flex flex-wrap items-center gap-4 px-5 py-2 text-xs border-b border-gray-800/50 shrink-0">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-600 inline-block" />Locked</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />Unlocked</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-700 inline-block" />Locked</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full border border-orange-700/60 inline-block" />Available</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />★1-2</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />★3-4</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />★5 Mastered</span>

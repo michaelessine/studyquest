@@ -14,6 +14,12 @@ type TopicNode = {
 
 interface Props { nodes: TopicNode[] }
 
+// Title-case a topic name: capitalize every word, but keep acronyms / intentional
+// casing as-is (ODE, PDE, SQL, LLMs, PyTorch, C++, scikit-learn → Scikit-learn, etc.).
+function toTitle(name: string): string {
+  return name.split(/\s+/).map(w => (/[A-Z]/.test(w) ? w : w.replace(/[a-z]/, c => c.toUpperCase()))).join(' ')
+}
+
 // ── Expanded resource links (Fix 2) ──────────────────────────────────────────
 function ResourceLinks({ name }: { name: string }) {
   const q = name.replace(/\s+/g, '+')
@@ -96,11 +102,11 @@ function TopicCard({ node, saving, onRate }: {
           <div className="flex items-start gap-2 min-w-0">
             {isLocked && <Lock size={13} className="text-gray-600 mt-0.5 shrink-0" />}
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-gray-200 leading-snug">{node.name}</div>
+              <div className="text-sm font-semibold text-gray-200 leading-snug">{toTitle(node.name)}</div>
               {node.prereqNames.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {node.prereqNames.map(p => (
-                    <span key={p} className="text-[10px] px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-500 whitespace-nowrap">{p}</span>
+                    <span key={p} className="text-[10px] px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-500 whitespace-nowrap">{toTitle(p)}</span>
                   ))}
                 </div>
               )}
@@ -187,14 +193,17 @@ export default function TopicsClient({ nodes }: Props) {
     setLocalMastery(prev => new Map(Array.from(prev.entries()).concat([[id, ml]])))
     setSaving(id)
     try {
-      await fetch(`/api/topics/${id}`, {
+      const res = await fetch(`/api/topics/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'skillNode', masteryLevel: ml }),
       })
+      const data = await res.json().catch(() => ({}))
       const name = nodes.find(n => n.id === id)?.name ?? 'Topic'
       if (ml >= 5) showToast('info', `★★★★★ ${name} mastered!`)
       else if (ml > 0) showToast('info', `Rated "${name}" ${ml}★`)
+      const unlocked: string[] = data.unlockedNames ?? []
+      if (unlocked.length > 0) showToast('info', `🔓 Unlocked: ${unlocked.slice(0, 4).join(', ')}${unlocked.length > 4 ? ` +${unlocked.length - 4} more` : ''}`)
       router.refresh()
     } catch {
       setLocalMastery(prev => { const m = new Map(prev); m.delete(id); return m })

@@ -1,20 +1,25 @@
-// POST /api/exam/analyze — analyze a real university exam, apply mastery gains
+// POST /api/exam/analyze — analyze a real university exam, apply mastery gains.
+// Gains are applied DETERMINISTICALLY to the selected topics (no LLM id-echoing).
+// Claude only adds per-topic estimated scores (by index) + insight for the
+// consolidation path. Resilient: works even if the Claude call fails.
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { claudeJSON, HAIKU } from '@/lib/claude'
 import { applyMasteryGain, gradeToScore } from '@/lib/mastery'
 
-type ExamAnalysis = {
-  topicMasteryGains: { skillNodeId: string; gain: number; estimatedScore: number; reasoning: string }[]
-  insight: string
-  reviewTopics: string[]
+const round25 = (n: number) => Math.round(n * 4) / 4
+function trimNotes(s: string): string { return (s ?? '').slice(0, 500) }
+
+// Deterministic gain from overall grade (1–5 scale), ~50% tuned-down.
+function baseGainFor(examScore: number): number {
+  if (examScore >= 90) return 0.75   // grade 5
+  if (examScore >= 70) return 0.5    // grade 3-4
+  if (examScore >= 50) return 0.25   // grade 1-2
+  return 0                           // fail
 }
 
-// Trim notes (PART 4: keep input small)
-function trimNotes(s: string): string {
-  return (s ?? '').slice(0, 500)
-}
+type Indexed = { topics?: { i: number; estimatedScore: number }[]; insight?: string; reviewTopics?: string[] }
 
 export async function POST(req: NextRequest) {
   const { examName, subject, skillNodeIds, grade, notes } = await req.json()
@@ -22,89 +27,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
-  const nodes = await prisma.skillNode.findMany({
+  // Preserve selection order
+  const found = await prisma.skillNode.findMany({
     where: { id: { in: skillNodeIds } },
     select: { id: true, name: true, masteryLevel: true },
   })
+  const byId = new Map(found.map(n => [n.id, n]))
+  const nodes = (skillNodeIds as string[]).map(id => byId.get(id)).filter(Boolean) as { id: string; name: string; masteryLevel: number }[]
   if (nodes.length === 0) return NextResponse.json({ error: 'No valid topics' }, { status: 400 })
 
-  const topicList = nodes.map(n => `id:${n.id} | ${n.name} (current mastery ${n.masteryLevel}/5)`).join('\n')
   const examScore = gradeToScore(grade)
+  const baseGain = baseGainFor(examScore)
 
-  // PART 4: grade-scaled gain guidance (1–5 scale: 90+→5, 80-89→4, 70-79→3, 60-69→2, 50-59→1, <50 Fail)
-  const gradeBand = examScore >= 90 ? 'grade 5 (excellent) → suggest gains 1.5-2.0'
-    : examScore >= 80 ? 'grade 4 (very good) → suggest gains 1.0-1.5'
-    : examScore >= 70 ? 'grade 3 (good) → suggest gains 0.75-1.25'
-    : examScore >= 60 ? 'grade 2 (satisfactory) → suggest gains 0.5-1.0'
-    : examScore >= 50 ? 'grade 1 (pass) → suggest gains 0.25-0.5'
-    : 'Fail → warning only, gains 0'
+  // ── Claude: indexed estimated scores + insight (best-effort, never blocks) ──
+  const indexedList = nodes.map((n, i) => `[${i}] ${n.name} (current mastery ${n.masteryLevel}/5)`).join('\n')
+  const system = `You analyze a real university exam. For each topic (referenced by its [index]), estimate the student's likely performance 0-100, varying with the notes.
+Return ONLY JSON: { "topics": [{ "i": number, "estimatedScore": number }], "insight": "2 sentences", "reviewTopics": string[] (topic names that looked weak) }`
+  const userMsg = `Exam: "${examName}" in ${subject}. Overall grade: ${grade}/5 (~${examScore}%).
+Topics (by index):\n${indexedList}\nNotes: "${trimNotes(notes)}"`
 
-  const system = `You analyze a real university exam and estimate, per covered topic, (a) a likely performance score 0-100 and (b) a mastery gain.
-Overall grade band: ${gradeBand}. Use the notes to vary estimates between topics (some stronger, some weaker than the overall grade).
-Return ONLY JSON: { "topicMasteryGains": [{ "skillNodeId": string (from the list), "estimatedScore": number (0-100), "gain": number (0-2; 0 for a Fail), "reasoning": "≤12 words" }], "insight": string, "reviewTopics": string[] (topic names to revisit if weak) }`
-
-  const userMsg = `University exam: "${examName}" in ${subject}. Grade: ${grade}.
-Topics covered:\n${topicList}\nNotes: "${trimNotes(notes)}"`
-
-  let analysis: ExamAnalysis
+  const estByIndex = new Map<number, number>()
+  let insight = ''
+  let reviewTopics: string[] = []
   try {
-    analysis = await claudeJSON<ExamAnalysis>({
-      system, user: userMsg,
-      model: HAIKU,             // Fix 9: extraction/analysis → Haiku
-      cacheSystem: true,
-      route: 'exam/analyze',
-      maxTokens: 1100,
-    })
+    const a = await claudeJSON<Indexed>({ system, user: userMsg, model: HAIKU, cacheSystem: true, route: 'exam/analyze', maxTokens: 800 })
+    for (const t of a.topics ?? []) if (typeof t.i === 'number' && typeof t.estimatedScore === 'number') estByIndex.set(t.i, t.estimatedScore)
+    insight = a.insight ?? ''
+    reviewTopics = a.reviewTopics ?? []
   } catch (err) {
-    console.error('Exam analyze error:', err)
-    return NextResponse.json({ error: 'Failed to analyze exam' }, { status: 500 })
+    console.error('Exam analyze (Claude) failed, using deterministic gains:', err)
   }
+  if (!insight) insight = `Logged grade ${grade}/5 on "${examName}". Mastery was updated for the covered topics.`
 
-  // Apply mastery gains via the strict progression system (real_exam events).
-  const validIds = new Set(nodes.map(n => n.id))
+  // ── Apply gains deterministically to every selected topic ───────────────────
   const applied: { skillNodeId: string; newMasteryLevel: number; capped: boolean }[] = []
   const masteryImpact: Record<string, number> = {}
-
-  for (const g of analysis.topicMasteryGains ?? []) {
-    if (!validIds.has(g.skillNodeId)) continue
-    const gain = Math.max(0, Math.min(2, g.gain ?? 0))
-    if (gain <= 0) continue
-    const res = await applyMasteryGain({ skillNodeId: g.skillNodeId, eventType: 'real_exam', score: examScore, delta: gain })
-    applied.push({ skillNodeId: g.skillNodeId, newMasteryLevel: res.newMasteryLevel, capped: res.capped })
-    masteryImpact[g.skillNodeId] = res.gain
+  if (baseGain > 0) {
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i]
+      const est = estByIndex.get(i) ?? examScore
+      // Weaker-than-passing topics get half the gain; everything passing still moves.
+      const gain = est < 50 ? round25(baseGain / 2) : baseGain
+      if (gain <= 0) continue
+      const res = await applyMasteryGain({ skillNodeId: n.id, eventType: 'real_exam', score: examScore, delta: gain })
+      applied.push({ skillNodeId: n.id, newMasteryLevel: res.newMasteryLevel, capped: res.capped })
+      masteryImpact[n.id] = res.gain
+    }
   }
 
-  // ── Post-exam consolidation path (topics scored < 80%) ──────────────────────
+  // ── Post-exam consolidation path (topics estimated < 80%) ───────────────────
   const nodeName = new Map(nodes.map(n => [n.id, n.name]))
-  const weakTopics = (analysis.topicMasteryGains ?? [])
-    .filter(g => validIds.has(g.skillNodeId) && (g.estimatedScore ?? 100) < 80)
-    .map(g => ({ id: g.skillNodeId, score: Math.round(g.estimatedScore ?? 0) }))
+  const weakTopics = nodes
+    .map((n, i) => ({ id: n.id, score: Math.round(estByIndex.get(i) ?? examScore) }))
+    .filter(t => t.score < 80)
 
   let consolidation: { pathId: string; headline: string; topics: { id: string; name: string; reason: string }[] } | null = null
 
   if (weakTopics.length > 0) {
     const weakIds = weakTopics.map(w => w.id)
-
-    // Pull shaky prerequisites (mastery < 3) of the weak topics — drill these first
-    const prereqLinks = await prisma.skillDependency.findMany({
-      where: { dependentId: { in: weakIds } },
-      select: { prerequisiteId: true },
-    })
+    const prereqLinks = await prisma.skillDependency.findMany({ where: { dependentId: { in: weakIds } }, select: { prerequisiteId: true } })
     const prereqNodes = await prisma.skillNode.findMany({
       where: { id: { in: prereqLinks.map(p => p.prerequisiteId) }, masteryLevel: { lt: 3 } },
       select: { id: true, name: true, tier: true },
     })
-
-    // Order: weak prerequisites (tier asc) first, then the weak exam topics
-    const orderedIds = [
-      ...prereqNodes.sort((a, b) => a.tier - b.tier).map(p => p.id),
-      ...weakIds,
-    ].filter((id, i, arr) => arr.indexOf(id) === i)
-
+    const orderedIds = [...prereqNodes.sort((a, b) => a.tier - b.tier).map(p => p.id), ...weakIds]
+      .filter((id, i, arr) => arr.indexOf(id) === i)
     const estimatedHours: Record<string, number> = {}
     for (const id of orderedIds) estimatedHours[id] = 3
 
-    // Unpin any existing pinned path, then create + pin the consolidation path
     await prisma.learningPath.updateMany({ where: { pinned: true }, data: { pinned: false } })
     const path = await prisma.learningPath.create({
       data: {
@@ -116,12 +106,10 @@ Topics covered:\n${topicList}\nNotes: "${trimNotes(notes)}"`
         pinned: true,
       },
     })
-
-    const lowest = weakTopics.sort((a, b) => a.score - b.score)[0]
-    const lowestName = nodeName.get(lowest.id) ?? 'a topic'
+    const lowest = [...weakTopics].sort((a, b) => a.score - b.score)[0]
     consolidation = {
       pathId: path.id,
-      headline: `You scored about ${lowest.score}% on ${lowestName} in "${examName}". Here's what to drill before you move on.`,
+      headline: `You scored about ${lowest.score}% on ${nodeName.get(lowest.id) ?? 'a topic'} in "${examName}". Here's what to drill before you move on.`,
       topics: [
         ...prereqNodes.map(p => ({ id: p.id, name: p.name, reason: 'shaky prerequisite' })),
         ...weakTopics.map(w => ({ id: w.id, name: nodeName.get(w.id) ?? w.id, reason: `~${w.score}% on the exam` })),
@@ -129,7 +117,6 @@ Topics covered:\n${topicList}\nNotes: "${trimNotes(notes)}"`
     }
   }
 
-  // Persist the exam record
   const exam = await prisma.realExam.create({
     data: {
       examName, subject, grade,
@@ -139,5 +126,5 @@ Topics covered:\n${topicList}\nNotes: "${trimNotes(notes)}"`
     },
   })
 
-  return NextResponse.json({ exam, analysis, applied, consolidation })
+  return NextResponse.json({ exam, analysis: { insight, reviewTopics }, applied, consolidation })
 }

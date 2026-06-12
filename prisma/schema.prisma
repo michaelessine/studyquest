@@ -246,6 +246,8 @@ model StudySession {
   endTime     DateTime?
   durationMins Int      @default(0)
   source      String    @default("manual") // manual | auto
+  note        String?   // reflection / what you did
+  sourceUrl   String?   // link to e.g. a ChatGPT conversation or resource
 
   skillNode SkillNode? @relation(fields: [skillNodeId], references: [id], onDelete: SetNull)
 }

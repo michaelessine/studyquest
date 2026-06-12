@@ -24,8 +24,8 @@ export async function PATCH(
       where: { id: params.id },
       data: { masteryLevel: ml, status, masteryUpdatedAt: new Date(), ...reviewFields },
     })
-    if (ml >= 1) await cascadeUnlock()
-    return NextResponse.json({ node })
+    const unlocked = ml >= 1 ? await cascadeUnlock() : []
+    return NextResponse.json({ node, unlockedNames: unlocked.map(u => u.name) })
   }
 
   // ── Legacy status-only ────────────────────────────────────────────────────
