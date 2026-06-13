@@ -15,6 +15,22 @@ function statusStyle(status: string) {
   return map[status] ?? 'bg-gray-800 text-gray-400'
 }
 
+export const dynamic = 'force-dynamic'
+
+function MiniBar({ label, done, total, pct }: { label: string; done: number; total: number; pct: number }) {
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] text-gray-600 mb-0.5">
+        <span>{label}</span>
+        <span>{done}/{total}</span>
+      </div>
+      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-full bg-orange-600 rounded-full" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
 export default async function CoursesPage() {
   // Fetch courses with topic counts
   const courses = await prisma.course.findMany({
@@ -62,8 +78,11 @@ export default async function CoursesPage() {
                 const totalTopic = course.topics.length
                 const topicPct = totalTopic > 0 ? Math.round((doneTopic / totalTopic) * 100) : 0
 
+                const exPct = course.exerciseSetsTotal > 0 ? Math.round((course.exerciseSetsDone / course.exerciseSetsTotal) * 100) : null
+                const qzPct = course.quizzesTotal > 0 ? Math.round((course.quizzesDone / course.quizzesTotal) * 100) : null
+
                 return (
-                  <div key={course.id} className="card p-4 hover:border-gray-700 transition-colors">
+                  <Link key={course.id} href={`/courses/${course.id}`} className="card p-4 hover:border-gray-700 transition-colors block">
                     {/* Course header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0">
@@ -86,23 +105,18 @@ export default async function CoursesPage() {
                       )}
                     </div>
 
-                    {/* Topic progress */}
-                    {totalTopic > 0 && (
-                      <div>
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
-                          <span className="flex items-center gap-1">
-                            <BookOpen size={11} /> Topics
-                          </span>
-                          <span>{doneTopic}/{totalTopic}</span>
-                        </div>
-                        <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-orange-600 rounded-full"
-                            style={{ width: `${topicPct}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    {/* Component progress bars */}
+                    <div className="space-y-2">
+                      {exPct !== null && (
+                        <MiniBar label="Exercise sets" done={course.exerciseSetsDone} total={course.exerciseSetsTotal} pct={exPct} />
+                      )}
+                      {qzPct !== null && (
+                        <MiniBar label="Quizzes" done={course.quizzesDone} total={course.quizzesTotal} pct={qzPct} />
+                      )}
+                      {totalTopic > 0 && (
+                        <MiniBar label="Topics" done={doneTopic} total={totalTopic} pct={topicPct} />
+                      )}
+                    </div>
 
                     {/* Deadline count */}
                     {course._count.deadlines > 0 && (
@@ -111,14 +125,10 @@ export default async function CoursesPage() {
                       </div>
                     )}
 
-                    {/* Deep-link to Topics filtered by subject */}
-                    <Link
-                      href={`/topics?subject=${course.subject}`}
-                      className="mt-3 flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors"
-                    >
-                      View topics <ChevronRight size={11} />
-                    </Link>
-                  </div>
+                    <span className="mt-3 flex items-center gap-1 text-xs text-orange-400">
+                      Open course <ChevronRight size={11} />
+                    </span>
+                  </Link>
                 )
               })}
             </div>

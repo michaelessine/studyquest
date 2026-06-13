@@ -5,10 +5,13 @@ import prisma from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const [sessionLogs, studySessions, skillNodes] = await Promise.all([
+  const now = new Date()
+  const thirtyAgo = new Date(now.getTime() - 30 * 86_400_000)
+  const [sessionLogs, studySessions, skillNodes, masteryEvents] = await Promise.all([
     prisma.sessionLog.findMany({ select: { loggedAt: true, durationMins: true, courseId: true } }),
     prisma.studySession.findMany({ select: { startTime: true, durationMins: true, skillNodeId: true } }),
     prisma.skillNode.findMany({ select: { subject: true, masteryLevel: true } }),
+    prisma.masteryEvent.findMany({ where: { timestamp: { gte: thirtyAgo }, masteryGain: { gt: 0 } }, select: { masteryGain: true, timestamp: true } }),
   ])
 
   // Unify both session sources into { date, mins }
@@ -75,9 +78,65 @@ export async function GET() {
   const onPace = totalHours
   const projection = Math.round(onPace * 1.5 * 10) / 10 // naive projection
 
+  // ── Streaks (consecutive days with any study) ───────────────────────────────
+  const dk = (d: Date) => d.toISOString().split('T')[0]
+  const studiedDays = new Set(entries.map(e => e.date))
+  let currentStreak = 0
+  {
+    const cursor = new Date(now)
+    if (!studiedDays.has(dk(cursor))) cursor.setDate(cursor.getDate() - 1) // grace for "not yet today"
+    while (studiedDays.has(dk(cursor))) { currentStreak++; cursor.setDate(cursor.getDate() - 1) }
+  }
+  let longestStreak = 0
+  {
+    let run = 0; let prev: number | null = null
+    for (const ds of Array.from(studiedDays).sort()) {
+      const t = new Date(ds).getTime()
+      run = prev !== null && t - prev === 86_400_000 ? run + 1 : 1
+      if (run > longestStreak) longestStreak = run
+      prev = t
+    }
+  }
+
+  // ── Momentum: this week vs last week ────────────────────────────────────────
+  const weekAgo = new Date(now.getTime() - 7 * 86_400_000)
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 86_400_000)
+  let thisWeekMins = 0, lastWeekMins = 0
+  for (const e of entries) {
+    const d = new Date(e.date)
+    if (d >= weekAgo) thisWeekMins += e.mins
+    else if (d >= twoWeeksAgo) lastWeekMins += e.mins
+  }
+  const thisWeekHours = Math.round((thisWeekMins / 60) * 10) / 10
+  const lastWeekHours = Math.round((lastWeekMins / 60) * 10) / 10
+  const weekDeltaPct = lastWeekMins > 0 ? Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100) : null
+
+  // ── Consistency + session shape ─────────────────────────────────────────────
+  const activeDays30 = Array.from(studiedDays).filter(ds => new Date(ds) >= thirtyAgo).length
+  const avgSessionMins = entries.length > 0 ? Math.round(totalMins / entries.length) : 0
+  const busiestIdx = dow.indexOf(Math.max(...dow))
+  const busiestDay = dow[busiestIdx] > 0 ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][busiestIdx] : null
+
+  // ── Mastery velocity (stars earned) ─────────────────────────────────────────
+  let starsEarned7 = 0, starsEarned30 = 0
+  for (const m of masteryEvents) {
+    starsEarned30 += m.masteryGain
+    if (m.timestamp >= weekAgo) starsEarned7 += m.masteryGain
+  }
+  starsEarned7 = Math.round(starsEarned7 * 4) / 4
+  starsEarned30 = Math.round(starsEarned30 * 4) / 4
+
+  const masteredCount = skillNodes.filter(n => n.masteryLevel >= 5).length
+  const inProgressCount = skillNodes.filter(n => n.masteryLevel > 0 && n.masteryLevel < 5).length
+
   return NextResponse.json({
     totalHours, totalSessions: entries.length,
     overTime, heatmap, masteryDistribution, perSubject,
     semesterGoalHours, projection,
+    currentStreak, longestStreak,
+    thisWeekHours, lastWeekHours, weekDeltaPct,
+    activeDays30, avgSessionMins, busiestDay,
+    starsEarned7, starsEarned30,
+    masteredCount, inProgressCount,
   })
 }

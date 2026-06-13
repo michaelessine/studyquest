@@ -97,10 +97,13 @@ export interface CareerProgress {
   matched: { id: string; name: string; subject: string; masteryLevel: number; status: string }[]
   masteredTopics: { id: string; name: string; subject: string }[]
   recommendedNext: { id: string; name: string; subject: string; masteryLevel: number }[]
+  // Every topic the path requires — whether or not it's in your skill tree yet.
+  allTopics: { name: string; id: string | null; subject: string | null; masteryLevel: number; inTree: boolean }[]
   relevance: number   // % of career topics you've engaged (mastery >= 1)
   readiness: number   // avg mastery / 5 → entry-level readiness
   gapText: string
-  totalTopics: number
+  totalTopics: number   // mapped (in-tree) topics
+  requiredTopics: number // all listed topics for the path
 }
 
 const MASTERED = 4   // green / strong
@@ -111,10 +114,11 @@ export function computeCareerProgress(career: Career, nodes: SlimNode[]): Career
   for (const n of nodes) byName.set(n.name.toLowerCase(), n)
 
   const matched: SlimNode[] = []
-  for (const t of career.topics) {
+  const allTopics = career.topics.map(t => {
     const n = byName.get(t.toLowerCase())
-    if (n) matched.push(n)
-  }
+    if (n) { matched.push(n); return { name: n.name, id: n.id, subject: n.subject, masteryLevel: n.masteryLevel, inTree: true } }
+    return { name: t, id: null, subject: null, masteryLevel: 0, inTree: false }
+  })
   const total = matched.length
 
   const mastered = matched.filter(n => n.masteryLevel >= MASTERED)
@@ -145,7 +149,7 @@ export function computeCareerProgress(career: Career, nodes: SlimNode[]): Career
     id: career.id, label: career.label,
     matched: matched.map(n => ({ id: n.id, name: n.name, subject: n.subject, masteryLevel: n.masteryLevel, status: n.status })),
     masteredTopics: mastered.map(n => ({ id: n.id, name: n.name, subject: n.subject })),
-    recommendedNext,
-    relevance, readiness, gapText, totalTopics: total,
+    recommendedNext, allTopics,
+    relevance, readiness, gapText, totalTopics: total, requiredTopics: career.topics.length,
   }
 }

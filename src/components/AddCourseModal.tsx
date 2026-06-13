@@ -27,7 +27,7 @@ export default function AddCourseModal() {
   const [form, setForm] = useState({
     code: '', name: '', subject: 'Mathematics',
     semester: '', year: new Date().getFullYear().toString(),
-    status: 'active',
+    status: 'active', exerciseSetsTotal: '', quizzesTotal: '',
   })
 
   // ── PDF upload state ────────────────────────────────────────────────────
@@ -189,6 +189,26 @@ export default function AddCourseModal() {
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block"># Exercise sets</label>
+                      <input
+                        value={form.exerciseSetsTotal} onChange={e => setForm(f => ({ ...f, exerciseSetsTotal: e.target.value }))}
+                        type="number" min="0" placeholder="e.g. 12"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block"># Quizzes</label>
+                      <input
+                        value={form.quizzesTotal} onChange={e => setForm(f => ({ ...f, quizzesTotal: e.target.value }))}
+                        type="number" min="0" placeholder="e.g. 6"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-600 -mt-1">Used for course progress bars. You can leave these blank.</p>
 
                   {error && <p className="text-red-400 text-sm">{error}</p>}
 

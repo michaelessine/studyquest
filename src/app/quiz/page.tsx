@@ -4,6 +4,8 @@ import { SUBJECTS } from '@/lib/xp'
 import { Loader2 } from 'lucide-react'
 import QuizPageClient from '@/components/QuizPageClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function QuizPage() {
   const [recentExams, subjectStats] = await Promise.all([
     prisma.quizResult.findMany({

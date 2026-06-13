@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Loader2, DollarSign, Database, Save, AlertTriangle } from 'lucide-react'
+import { Loader2, DollarSign, Database, Save, AlertTriangle, Download } from 'lucide-react'
 
 type Summary = {
   estimatedMonthly: number
@@ -107,6 +107,18 @@ export default function SettingsPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Data & backup */}
+      <div className="card p-5">
+        <h2 className="font-semibold text-gray-200 mb-3 flex items-center gap-2"><Download size={15} className="text-orange-400" /> Data &amp; Backup</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Your data lives in a single database. Download a full JSON backup of your topics, mastery history, study sessions, exams, and notes. Keep it somewhere safe — it&apos;s your safety net if anything goes wrong.
+        </p>
+        <a href="/api/export" download
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors">
+          <Download size={14} /> Download backup (JSON)
+        </a>
       </div>
 
       {/* Monthly cap setting */}

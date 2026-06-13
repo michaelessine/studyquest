@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import { differenceInDays, format } from 'date-fns'
-import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle, GraduationCap, Route } from 'lucide-react'
+import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle, GraduationCap, Route, Workflow } from 'lucide-react'
 import Link from 'next/link'
 import DashboardClient from '@/components/DashboardClient'
 import QuickLog from '@/components/QuickLog'
@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const [skillNodes, upcomingDeadlines, activeTopics, recentExams] = await Promise.all([
     prisma.skillNode.findMany({ select: { id: true, name: true, subject: true, status: true, masteryLevel: true, nextReviewAt: true, reviewIntervalDays: true } }),
     prisma.deadline.findMany({
-      where: { completed: false }, orderBy: { dueDate: 'asc' }, take: 3,
+      where: { completed: false }, orderBy: { dueDate: 'asc' }, take: 6,
       include: { course: { select: { name: true, subject: true } } },
     }),
     prisma.topic.findMany({
@@ -80,9 +80,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        </div>
+        <Link href="/workflow" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-orange-300 transition-colors mt-1">
+          <Workflow size={13} className="text-orange-400/80" /> Studying Workflow
+        </Link>
       </div>
 
       {/* Client-only features: weekly review banner + connections feed */}
@@ -90,6 +95,43 @@ export default async function DashboardPage() {
 
       {/* Frictionless study logging */}
       <QuickLog />
+
+      {/* Upcoming deadlines — front and center */}
+      <div className={`card p-5 ${upcomingDeadlines.some(d => differenceInDays(new Date(d.dueDate), new Date()) < 0) ? 'border-red-800/50' : upcomingDeadlines.length > 0 ? 'border-orange-700/40' : ''}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><Clock size={15} className="text-orange-400" />Upcoming Deadlines</h2>
+          <Link href="/schedule" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">View all <ChevronRight size={12} /></Link>
+        </div>
+        {upcomingDeadlines.length === 0 ? (
+          <div className="py-8 flex flex-col items-center gap-3">
+            <Calendar size={32} className="text-gray-700" />
+            <p className="text-sm text-gray-500">No upcoming deadlines</p>
+            <Link href="/schedule" className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors">+ Add Deadline</Link>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {upcomingDeadlines.map(dl => {
+              const daysLeft = differenceInDays(new Date(dl.dueDate), new Date())
+              const overdue = daysLeft < 0
+              return (
+                <div key={dl.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg ${overdue ? 'bg-red-950/20' : 'bg-gray-800/40'}`}>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-200 truncate">{dl.title}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-gray-500 truncate">{dl.course.name}</span>
+                      <span className={`badge ${typeBadge(dl.type)}`}>{dl.type.replace('_', ' ')}</span>
+                    </div>
+                  </div>
+                  <div className={`text-sm font-semibold shrink-0 text-right ${overdue ? 'text-red-400' : urgencyClass(daysLeft)}`}>
+                    {overdue ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d left`}
+                    <div className="text-[10px] text-gray-600 font-normal">{format(new Date(dl.dueDate), 'MMM d')}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* In progress — pinned learning path */}
       {pinnedPathView && (
@@ -183,41 +225,6 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* Upcoming deadlines */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-200 flex items-center gap-2"><Clock size={15} className="text-orange-400" />Upcoming Deadlines</h2>
-          <Link href="/schedule" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">View all <ChevronRight size={12} /></Link>
-        </div>
-        {upcomingDeadlines.length === 0 ? (
-          <div className="py-8 flex flex-col items-center gap-3">
-            <Calendar size={32} className="text-gray-700" />
-            <p className="text-sm text-gray-500">No upcoming deadlines</p>
-            <Link href="/schedule" className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors">+ Add Deadline</Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {upcomingDeadlines.map(dl => {
-              const daysLeft = differenceInDays(new Date(dl.dueDate), new Date())
-              return (
-                <div key={dl.id} className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-200 truncate">{dl.title}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-500">{dl.course.name}</span>
-                      <span className={`badge ${typeBadge(dl.type)}`}>{dl.type}</span>
-                    </div>
-                  </div>
-                  <div className={`text-sm font-semibold shrink-0 ${urgencyClass(daysLeft)}`}>
-                    {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d`}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
 
       {/* Active course topics */}
       <div className="card p-5">

@@ -20,22 +20,52 @@ interface Props {
   advancement: { label: string; count: number }[]
   topCareerLabel: string
   nextRecommended: Next[]
+  embedded?: boolean
 }
 
 // Shorten long career labels for radar axes
 function shortLabel(s: string): string {
-  return s.replace(/ &.*$/, '').replace(/\(.*\)/, '').replace(/Artificial Intelligence/, 'AI').trim().slice(0, 18)
+  return s
+    .replace(/ &.*$/, '')           // drop everything after "&"
+    .replace(/\s*\(.*\)/, '')       // drop parentheticals
+    .replace(/Artificial Intelligence/, 'AI')
+    .replace(/Machine Learning/, 'ML')
+    .replace(/ and .*/i, '')        // keep the lead phrase
+    .trim()
+    .slice(0, 22)
 }
 
-export default function ProgressClient({ masteredThisMonth, inProgress, growth, radar, advancement, topCareerLabel, nextRecommended }: Props) {
+// Custom radar tick — wraps long labels onto two lines and keeps the
+// chart-supplied text anchor so labels don't collide or clip at the edges.
+type TickProps = { x?: number; y?: number; textAnchor?: 'start' | 'middle' | 'end'; payload?: { value?: string } }
+function RadarTick({ x = 0, y = 0, textAnchor = 'middle', payload }: TickProps) {
+  const words = String(payload?.value ?? '').split(' ')
+  const lines: string[] = []
+  let cur = ''
+  for (const w of words) {
+    if ((cur + ' ' + w).trim().length > 12 && cur) { lines.push(cur); cur = w }
+    else cur = (cur + ' ' + w).trim()
+  }
+  if (cur) lines.push(cur)
+  const dy = -(lines.length - 1) * 5
+  return (
+    <text x={x} y={y} textAnchor={textAnchor} fill="#9ca3af" fontSize={9}>
+      {lines.map((ln, i) => <tspan key={i} x={x} dy={i === 0 ? dy : 10}>{ln}</tspan>)}
+    </text>
+  )
+}
+
+export default function ProgressClient({ masteredThisMonth, inProgress, growth, radar, advancement, topCareerLabel, nextRecommended, embedded }: Props) {
   const radarData = radar.map(r => ({ axis: shortLabel(r.career), readiness: r.readiness }))
 
   return (
-    <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-100">Progress</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Your mastery growth and career trajectory.</p>
-      </div>
+    <div className={embedded ? 'space-y-6' : 'p-5 md:p-8 max-w-6xl mx-auto space-y-6'}>
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100">Progress</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Your mastery growth and career trajectory.</p>
+        </div>
+      )}
 
       {/* This week's advancement */}
       {advancement.length > 0 && (
@@ -71,10 +101,10 @@ export default function ProgressClient({ masteredThisMonth, inProgress, growth, 
         <div className="card p-5">
           <h2 className="font-semibold text-gray-200 mb-4 flex items-center gap-2"><Target size={15} className="text-orange-400" /> Career Readiness</h2>
           {radarData.length === 0 ? <p className="text-sm text-gray-600">No career data yet.</p> : (
-            <ResponsiveContainer width="100%" height={240}>
-              <RadarChart data={radarData} outerRadius={85}>
+            <ResponsiveContainer width="100%" height={280}>
+              <RadarChart data={radarData} outerRadius="62%" margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
                 <PolarGrid stroke="#1f2937" />
-                <PolarAngleAxis dataKey="axis" tick={{ fill: '#9ca3af', fontSize: 9 }} />
+                <PolarAngleAxis dataKey="axis" tick={<RadarTick />} />
                 <PolarRadiusAxis domain={[0, 100]} tick={{ fill: '#4b5563', fontSize: 8 }} angle={90} />
                 <Radar name="Readiness" dataKey="readiness" stroke="#ea580c" fill="#ea580c" fillOpacity={0.35} />
                 <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }} />

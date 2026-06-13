@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Upload, FileText, CheckCircle2 } from 'lucide-react'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from '@/components/ToastProvider'
 import WeakSpotDiagnosis from '@/components/WeakSpotDiagnosis'
+
+type CourseOpt = { id: string; name: string; code: string | null; subject: string }
 
 type Analysis = {
   topics: { skillNodeId: string; name: string; difficulty: string }[]
@@ -20,7 +22,11 @@ export default function ExercisesPage() {
   const router = useRouter()
   const { showToast } = useToast()
   const [subject, setSubject] = useState<Subject>('Mathematics')
+  const [courses, setCourses] = useState<CourseOpt[]>([])
+  const [courseId, setCourseId] = useState<string>('')
   const [file, setFile]       = useState<File | null>(null)
+
+  useEffect(() => { fetch('/api/courses').then(r => r.json()).then(d => setCourses(d.courses ?? [])).catch(() => {}) }, [])
   const [analyzing, setAnalyzing] = useState(false)
   const [analysis, setAnalysis]   = useState<Analysis | null>(null)
   const [setId, setSetId]     = useState<string | null>(null)
@@ -51,12 +57,16 @@ export default function ExercisesPage() {
     try {
       const res = await fetch('/api/exercise/apply', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exerciseSetId: setId, skillNodeIds: analysis.topics.map(t => t.skillNodeId), pctSolved: pct }),
+        body: JSON.stringify({ exerciseSetId: setId, skillNodeIds: analysis.topics.map(t => t.skillNodeId), pctSolved: pct, courseId: courseId || null }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setDone(data.applied)
       showToast('info', data.applied.length ? `Applied to ${data.applied.length} topic(s)` : 'No gain — solve ≥80% for credit')
+      if (data.courseProgress) {
+        const cp = data.courseProgress
+        showToast('info', `Course progress: ${cp.exerciseSetsDone}${cp.exerciseSetsTotal > 0 ? `/${cp.exerciseSetsTotal}` : ''} exercise sets done`)
+      }
       router.refresh()
     } catch (e) {
       showToast('info', e instanceof Error ? e.message : 'Failed')
@@ -76,13 +86,26 @@ export default function ExercisesPage() {
 
       {!analysis && (
         <div className="card p-5 space-y-4">
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Subject</label>
-            <select value={subject} onChange={e => setSubject(e.target.value as Subject)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
-              {SUBJECTS.map(s => <option key={s} value={s}>{SUBJECT_LABEL[s]}</option>)}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Subject</label>
+              <select value={subject} onChange={e => { setSubject(e.target.value as Subject); setCourseId('') }}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
+                {SUBJECTS.map(s => <option key={s} value={s}>{SUBJECT_LABEL[s]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Course (optional)</label>
+              <select value={courseId} onChange={e => setCourseId(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-orange-600">
+                <option value="">— No course —</option>
+                {courses.filter(c => c.subject === subject).map(c => (
+                  <option key={c.id} value={c.id}>{c.code ? `${c.code} · ` : ''}{c.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
+          <p className="text-[11px] text-gray-600 -mt-2">Tagging a course advances its exercise-set progress automatically.</p>
           <label className="block cursor-pointer">
             <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${file ? 'border-orange-600 bg-orange-900/20' : 'border-gray-700 hover:border-gray-600'}`}>
               <Upload size={28} className="mx-auto mb-2 text-gray-500" />

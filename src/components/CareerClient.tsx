@@ -9,7 +9,16 @@ type CareerProgress = {
   matched: { id: string; name: string; subject: string; masteryLevel: number; status: string }[]
   masteredTopics: { id: string; name: string; subject: string }[]
   recommendedNext: { id: string; name: string; subject: string; masteryLevel: number }[]
-  relevance: number; readiness: number; gapText: string; totalTopics: number
+  allTopics: { name: string; id: string | null; subject: string | null; masteryLevel: number; inTree: boolean }[]
+  relevance: number; readiness: number; gapText: string; totalTopics: number; requiredTopics: number
+}
+
+function topicChip(t: CareerProgress['allTopics'][number]) {
+  if (!t.inTree) return 'bg-gray-900/40 border-dashed border-gray-700 text-gray-500'
+  if (t.masteryLevel >= 4) return 'bg-green-950/40 border-green-800/40 text-green-300'
+  if (t.masteryLevel >= 3) return 'bg-orange-950/40 border-orange-800/40 text-orange-300'
+  if (t.masteryLevel >= 1) return 'bg-blue-950/40 border-blue-800/40 text-blue-300'
+  return 'bg-gray-800/60 border-gray-700/50 text-gray-400'
 }
 
 function subjLabel(s: string) { return SUBJECT_LABEL[s as Subject] ?? s }
@@ -34,6 +43,8 @@ function Ring({ pct, label, color }: { pct: number; label: string; color: string
 export default function CareerClient({ progress, initialSelected }: { progress: CareerProgress[]; initialSelected: string[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected.length ? initialSelected : ['data-science']))
   const [open, setOpen] = useState(false)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -130,6 +141,37 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* All required topics */}
+            <div className="mt-4 border-t border-gray-800 pt-3">
+              <button onClick={() => toggleExpand(p.id)} className="w-full flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-200">
+                <span>All required topics ({p.requiredTopics})</span>
+                <ChevronDown size={14} className={`transition-transform ${expanded.has(p.id) ? 'rotate-180' : ''}`} />
+              </button>
+              {expanded.has(p.id) && (
+                <>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {p.allTopics.map((t, i) => {
+                      const cls = `text-[11px] px-2 py-0.5 rounded border ${topicChip(t)}`
+                      return t.id ? (
+                        <Link key={i} href="/skills" title={t.inTree ? `${subjLabel(t.subject ?? '')} · ${t.masteryLevel}★` : 'Not in your skill tree'} className={`${cls} hover:opacity-80 transition-opacity`}>
+                          {t.name}{t.inTree && t.masteryLevel > 0 && <span className="opacity-60"> {t.masteryLevel}★</span>}
+                        </Link>
+                      ) : (
+                        <span key={i} className={cls} title="Not in your skill tree yet">{t.name}</span>
+                      )
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Strong (4★+)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />3★</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />1–2★</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-600 inline-block" />Not started</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-dashed border-gray-600 inline-block" />Not in tree</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ))}

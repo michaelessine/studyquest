@@ -276,41 +276,20 @@ const QUANTUM_MECHANICS: TopicDef[] = [
 // "Other Learning" — Physics, Entrepreneurship, Business Analytics, Management.
 // Cross-subject prereqs use "X from Subject" (resolved by resolvePrereq).
 const OTHERS: TopicDef[] = [
-  // ── PHYSICS: Nuclear Physics ────────────────────────────────────────────────
-  { name: 'Nuclear structure',                  tier: 0, category: 'Physics · Nuclear Physics', prereqs: ['Quantum mechanics basics from QuantumMechanics'] },
-  { name: 'Radioactivity and decay',            tier: 0, category: 'Physics · Nuclear Physics', prereqs: [] },
-  { name: 'Nuclear reactions',                  tier: 1, category: 'Physics · Nuclear Physics', prereqs: ['Nuclear structure'] },
-  { name: 'Neutron physics',                    tier: 1, category: 'Physics · Nuclear Physics', prereqs: ['Nuclear structure'] },
-  { name: 'Dosimetry and radiation protection', tier: 1, category: 'Physics · Nuclear Physics', prereqs: ['Radioactivity and decay'] },
-  { name: 'Particle detectors',                 tier: 1, category: 'Physics · Nuclear Physics', prereqs: ['Radioactivity and decay'] },
-  { name: 'Fission and fusion energy',          tier: 2, category: 'Physics · Nuclear Physics', prereqs: ['Nuclear reactions'] },
-  { name: 'Nuclear safety and waste management',tier: 2, category: 'Physics · Nuclear Physics', prereqs: ['Fission and fusion energy', 'Dosimetry and radiation protection'] },
-  { name: 'Applications in medicine and industry', tier: 2, category: 'Physics · Nuclear Physics', prereqs: ['Particle detectors', 'Dosimetry and radiation protection'] },
-  // ── PHYSICS: Astrophysics & Cosmology ───────────────────────────────────────
-  { name: 'Stellar structure and evolution',    tier: 0, category: 'Physics · Astrophysics & Cosmology', prereqs: [] },
-  { name: 'Hertzsprung-Russell diagram',        tier: 0, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Stellar structure and evolution'] },
-  { name: 'Exoplanet detection methods',        tier: 0, category: 'Physics · Astrophysics & Cosmology', prereqs: [] },
-  { name: 'Habitable zones',                    tier: 1, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Exoplanet detection methods'] },
-  { name: 'Stellar nucleosynthesis',            tier: 1, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Stellar structure and evolution'] },
-  { name: 'Neutron stars and pulsars',          tier: 1, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Stellar structure and evolution'] },
-  { name: 'Cosmic microwave background',        tier: 1, category: 'Physics · Astrophysics & Cosmology', prereqs: [] },
-  { name: 'Black holes and event horizons',     tier: 2, category: 'Physics · Astrophysics & Cosmology', prereqs: ['General relativity from QuantumMechanics'] },
-  { name: 'Gravitational lensing',              tier: 2, category: 'Physics · Astrophysics & Cosmology', prereqs: ['General relativity from QuantumMechanics'] },
-  { name: 'Big bang theory',                    tier: 2, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Cosmic microwave background'] },
-  { name: 'Cosmic inflation',                   tier: 3, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Big bang theory'] },
-  { name: 'Dark matter and dark energy',        tier: 3, category: 'Physics · Astrophysics & Cosmology', prereqs: ['Big bang theory', 'Gravitational lensing'] },
-  // ── PHYSICS: Statistical Physics ────────────────────────────────────────────
-  { name: 'Thermodynamics',                     tier: 0, category: 'Physics · Statistical Physics', prereqs: [] },
-  { name: 'Kinetic theory of gases',            tier: 1, category: 'Physics · Statistical Physics', prereqs: ['Thermodynamics'] },
-  { name: 'Boltzmann distribution',             tier: 1, category: 'Physics · Statistical Physics', prereqs: ['Thermodynamics', 'Probability theory from Mathematics'] },
-  { name: 'Equipartition theorem',              tier: 1, category: 'Physics · Statistical Physics', prereqs: ['Kinetic theory of gases'] },
-  { name: 'Entropy and thermodynamics',         tier: 1, category: 'Physics · Statistical Physics', prereqs: ['Thermodynamics'] },
-  { name: 'Brownian motion (stat phys)',        tier: 1, category: 'Physics · Statistical Physics', prereqs: ['Probability theory from Mathematics'] },
-  { name: 'Phase transitions and critical phenomena', tier: 2, category: 'Physics · Statistical Physics', prereqs: ['Boltzmann distribution'] },
-  { name: 'Ising model',                        tier: 2, category: 'Physics · Statistical Physics', prereqs: ['Boltzmann distribution'] },
-  { name: 'Monte Carlo simulations',            tier: 2, category: 'Physics · Statistical Physics', prereqs: ['Probability theory from Mathematics'] },
-  { name: 'Mean field theory',                  tier: 3, category: 'Physics · Statistical Physics', prereqs: ['Ising model', 'Phase transitions and critical phenomena'] },
-  { name: 'Non-equilibrium systems',            tier: 3, category: 'Physics · Statistical Physics', prereqs: ['Entropy and thermodynamics', 'Brownian motion (stat phys)'] },
+  // ── PHYSICS (curated) ───────────────────────────────────────────────────────
+  { name: 'Nuclear structure',                  tier: 0, category: 'Physics', prereqs: ['Quantum mechanics basics from QuantumMechanics'] },
+  { name: 'Radioactivity and decay',            tier: 0, category: 'Physics', prereqs: [] },
+  { name: 'Nuclear reactions',                  tier: 1, category: 'Physics', prereqs: ['Nuclear structure'] },
+  { name: 'Fission and fusion energy',          tier: 2, category: 'Physics', prereqs: ['Nuclear reactions'] },
+  { name: 'Exoplanet detection methods',        tier: 0, category: 'Physics', prereqs: [] },
+  { name: 'Cosmic microwave background',        tier: 1, category: 'Physics', prereqs: [] },
+  { name: 'Black holes and event horizons',     tier: 2, category: 'Physics', prereqs: ['General relativity from QuantumMechanics'] },
+  { name: 'Gravitational lensing',              tier: 2, category: 'Physics', prereqs: ['General relativity from QuantumMechanics'] },
+  { name: 'Big bang theory',                    tier: 2, category: 'Physics', prereqs: ['Cosmic microwave background'] },
+  { name: 'Cosmic inflation',                   tier: 3, category: 'Physics', prereqs: ['Big bang theory'] },
+  { name: 'Dark matter and dark energy',        tier: 3, category: 'Physics', prereqs: ['Big bang theory', 'Gravitational lensing'] },
+  { name: 'Brownian motion (stat phys)',        tier: 1, category: 'Physics', prereqs: ['Probability theory from Mathematics'] },
+  { name: 'Monte Carlo simulations',            tier: 2, category: 'Physics', prereqs: ['Probability theory from Mathematics'] },
 
   // ── ENTREPRENEURSHIP ────────────────────────────────────────────────────────
   { name: 'Startup fundamentals',                    tier: 0, category: 'Entrepreneurship', prereqs: [] },
@@ -328,24 +307,14 @@ const OTHERS: TopicDef[] = [
   { name: 'Exit strategies (acquisition, IPO)',      tier: 3, category: 'Entrepreneurship', prereqs: ['Scaling and operations', 'Fundraising (angel, VC, crowdfunding)'] },
   { name: 'Failure analysis and lessons learned',    tier: 3, category: 'Entrepreneurship', prereqs: ['Scaling and operations'] },
 
-  // ── BUSINESS ANALYTICS ──────────────────────────────────────────────────────
-  { name: 'Descriptive analytics (data summarization)', tier: 0, category: 'Business Analytics', prereqs: [] },
-  { name: 'Exploratory data analysis (EDA)',         tier: 0, category: 'Business Analytics', prereqs: ['Descriptive analytics (data summarization)'] },
+  // ── BUSINESS ANALYTICS (curated) ────────────────────────────────────────────
+  { name: 'Exploratory data analysis (EDA)',         tier: 0, category: 'Business Analytics', prereqs: [] },
   { name: 'Business metrics and KPIs',               tier: 0, category: 'Business Analytics', prereqs: [] },
-  { name: 'Python for analytics',                    tier: 0, category: 'Business Analytics', prereqs: [] },
-  { name: 'Cohort analysis and retention curves',    tier: 1, category: 'Business Analytics', prereqs: ['Business metrics and KPIs', 'Exploratory data analysis (EDA)'] },
   { name: 'Funnel analysis and conversion optimization', tier: 1, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
-  { name: 'Customer lifetime value (CLV) modeling',  tier: 1, category: 'Business Analytics', prereqs: ['Cohort analysis and retention curves'] },
-  { name: 'Attribution modeling (multi-touch)',      tier: 2, category: 'Business Analytics', prereqs: ['Funnel analysis and conversion optimization'] },
+  { name: 'Customer lifetime value (CLV) modeling',  tier: 1, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
   { name: 'A/B testing design and analysis',         tier: 2, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
-  { name: 'Experimentation frameworks',              tier: 2, category: 'Business Analytics', prereqs: ['A/B testing design and analysis'] },
   { name: 'Dashboarding and visualization for business', tier: 3, category: 'Business Analytics', prereqs: ['Exploratory data analysis (EDA)'] },
-  { name: 'Analytics tools (Tableau, Looker, Mode)', tier: 3, category: 'Business Analytics', prereqs: ['Dashboarding and visualization for business'] },
-  { name: 'Reporting best practices',                tier: 3, category: 'Business Analytics', prereqs: ['Dashboarding and visualization for business'] },
   { name: 'Storytelling with data',                  tier: 3, category: 'Business Analytics', prereqs: ['Dashboarding and visualization for business'] },
-  { name: 'Data-driven decision making',             tier: 3, category: 'Business Analytics', prereqs: ['Storytelling with data', 'Experimentation frameworks'] },
-  { name: 'Market sizing and forecasting',           tier: 3, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
-  { name: 'Decision analysis',                       tier: 2, category: 'Business Analytics', prereqs: ['Business metrics and KPIs', 'Exploratory data analysis (EDA)'] },
 
   // ── STRATEGIC / PRODUCT / OPERATIONS MANAGEMENT ─────────────────────────────
   { name: 'Strategic Management basics',  tier: 0, category: 'Management', prereqs: [] },

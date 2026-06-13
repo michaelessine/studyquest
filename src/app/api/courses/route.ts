@@ -14,7 +14,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { code, name, subject, semester, year, status, grade } = body
+  const { code, name, subject, semester, year, status, grade, exerciseSetsTotal, quizzesTotal } = body
 
   if (!name || !subject) {
     return NextResponse.json({ error: 'name and subject are required' }, { status: 400 })
@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
       year:     year ? parseInt(year) : null,
       status:   status || 'active',
       grade:    grade != null ? parseFloat(grade) : null,
+      exerciseSetsTotal: exerciseSetsTotal ? parseInt(exerciseSetsTotal) : 0,
+      quizzesTotal:      quizzesTotal ? parseInt(quizzesTotal) : 0,
     },
   })
 

@@ -1,11 +1,11 @@
 'use client'
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import type { Node, Edge, NodeProps } from '@xyflow/react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
-import { Loader2, X, ExternalLink, GraduationCap } from 'lucide-react'
+import { Loader2, X, ExternalLink, GraduationCap, Workflow } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from './ToastProvider'
@@ -71,6 +71,35 @@ function AutoFitView({ dep }: { dep: unknown }) {
     return () => cancelAnimationFrame(id)
   }, [dep, fitView])
   return null
+}
+
+// Custom wheel zoom — React Flow's built-in scroll zoom is slow (fixed d3 factor).
+// This anchors the zoom at the cursor and uses a larger, tunable step.
+const MIN_ZOOM = 0.15, MAX_ZOOM = 2.5, ZOOM_SPEED = 0.0055
+function FastZoom() {
+  const { getViewport, setViewport } = useReactFlow()
+  const anchor = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const container = anchor.current?.closest('.react-flow') as HTMLElement | null
+    if (!container) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = container.getBoundingClientRect()
+      const px = e.clientX - rect.left
+      const py = e.clientY - rect.top
+      const { x, y, zoom } = getViewport()
+      const factor = Math.exp(-e.deltaY * ZOOM_SPEED)
+      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor))
+      if (newZoom === zoom) return
+      // keep the flow point under the cursor fixed
+      const fx = (px - x) / zoom
+      const fy = (py - y) / zoom
+      setViewport({ x: px - fx * newZoom, y: py - fy * newZoom, zoom: newZoom })
+    }
+    container.addEventListener('wheel', onWheel, { passive: false })
+    return () => container.removeEventListener('wheel', onWheel)
+  }, [getViewport, setViewport])
+  return <div ref={anchor} style={{ display: 'none' }} />
 }
 
 function computeLayout(rawNodes: Props['nodes'], rawDeps: Props['deps']) {
@@ -143,6 +172,11 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpd
           <span className="text-[10px] px-2 py-0.5 bg-orange-900/40 border border-orange-800/50 rounded text-orange-300">{node.category}</span>
           <span className="text-[10px] px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-400">Tier {node.tier}</span>
         </div>
+
+        {/* Workflow reminder — point-of-use nudge */}
+        <Link href="/workflow" className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-orange-300 transition-colors">
+          <Workflow size={12} className="text-orange-400/80" /> Stuck on how to study this? Open your Studying Workflow →
+        </Link>
 
         {/* Star rating */}
         {node.status !== 'locked' ? (
@@ -330,13 +364,14 @@ export default function SkillTreeClient({ nodes, deps, subjectStats }: Props) {
         ) : (
           <ReactFlow key={subject} nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
             onNodeClick={onNodeClick} onInit={() => setFlowReady(true)}
-            minZoom={0.2} maxZoom={1.5} proOptions={{ hideAttribution: true }}>
+            minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} zoomOnScroll={false} proOptions={{ hideAttribution: true }}>
             <Background color="#1f2937" gap={24} size={1} />
             <Controls showInteractive={false} className="!bottom-4 !right-4 !left-auto" />
             <MiniMap
               nodeColor={n => { const d = n.data as SkillNodeData; return d.masteryLevel>=5?'#16a34a':d.masteryLevel>=3?'#ea580c':d.masteryLevel>=1?'#3b82f6':'#374151' }}
               maskColor="rgba(0,0,0,0.6)" className="!bg-gray-900 !border-gray-700" />
             <AutoFitView dep={subject} />
+            <FastZoom />
           </ReactFlow>
         )}
         {selected && (

@@ -19,10 +19,13 @@ type Session = {
 }
 
 const TYPE_BADGE: Record<string, string> = {
-  exam:       'bg-red-900/60 text-red-300',
-  assignment: 'bg-blue-900/60 text-blue-300',
-  quiz:       'bg-yellow-900/60 text-yellow-300',
-  reading:    'bg-green-900/60 text-green-300',
+  exam:         'bg-red-900/60 text-red-300',
+  assignment:   'bg-blue-900/60 text-blue-300',
+  quiz:         'bg-yellow-900/60 text-yellow-300',
+  reading:      'bg-green-900/60 text-green-300',
+  exercise_set: 'bg-orange-900/60 text-orange-300',
+  project:      'bg-purple-900/60 text-purple-300',
+  other:        'bg-gray-800 text-gray-300',
 }
 
 export default function SchedulePage() {

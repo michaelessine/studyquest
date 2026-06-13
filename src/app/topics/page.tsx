@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma'
 import TopicsClient from '@/components/TopicsClient'
 import { Loader2 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TopicsPage() {
   const [nodes, deps] = await Promise.all([
     prisma.skillNode.findMany({ orderBy: [{ subject: 'asc' }, { category: 'asc' }, { tier: 'asc' }, { name: 'asc' }] }),

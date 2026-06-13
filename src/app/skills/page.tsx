@@ -2,6 +2,8 @@ import prisma from '@/lib/prisma'
 import { SUBJECTS } from '@/lib/xp'
 import SkillTreeClient from '@/components/SkillTreeClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SkillsPage() {
   const [nodes, deps] = await Promise.all([
     prisma.skillNode.findMany({ orderBy: { subject: 'asc' } }),

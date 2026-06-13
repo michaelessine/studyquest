@@ -13,15 +13,17 @@ function TrendIcon({ t }: { t: 'up' | 'flat' | 'down' }) {
   return <Minus size={13} className="text-gray-500" />
 }
 
-export default function EvaluateClient({ evaluation }: { evaluation: Evaluation }) {
+export default function EvaluateClient({ evaluation, embedded }: { evaluation: Evaluation; embedded?: boolean }) {
   const { velocity, decayQueue, efficiency, calibration } = evaluation
 
   return (
-    <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-100">Performance Evaluation</h1>
-        <p className="text-sm text-gray-500 mt-0.5">How fast you&apos;re progressing, what&apos;s fading, and how accurate your self-assessment is.</p>
-      </div>
+    <div className={embedded ? 'space-y-6' : 'p-5 md:p-8 max-w-6xl mx-auto space-y-6'}>
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100">Performance Evaluation</h1>
+          <p className="text-sm text-gray-500 mt-0.5">How fast you&apos;re progressing, what&apos;s fading, and how accurate your self-assessment is.</p>
+        </div>
+      )}
 
       {/* Velocity */}
       <div className="card p-5">

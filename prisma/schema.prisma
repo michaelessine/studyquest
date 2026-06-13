@@ -21,6 +21,12 @@ model Course {
   xpAwarded Int      @default(0)
   createdAt DateTime @default(now())
 
+  // Course components → progress bars
+  exerciseSetsTotal Int @default(0)
+  exerciseSetsDone  Int @default(0)
+  quizzesTotal      Int @default(0)
+  quizzesDone       Int @default(0)
+
   topics     Topic[]
   deadlines  Deadline[]
   sessions   SessionLog[]
@@ -332,11 +338,15 @@ model RealExam {
 model ExerciseSet {
   id            String    @id @default(uuid())
   userId        String    @default("default")
+  courseId      String?   // optional link to a course (advances course progress)
   skillNodeIds  Json      // array of skillNodeIds
   filename      String
   uploadedAt    DateTime  @default(now())
   masteryImpact Json      // { skillNodeId: masteryGain }
+  pctSolved     Int?      // how much was solved (for course performance)
   analyzedAt    DateTime?
+
+  @@index([courseId])
 }
 
 model MasteryEvent {
@@ -388,4 +398,17 @@ model APIUsage {
   creditsRemaining Float   @default(0)
   lastFetched     DateTime @default(now())
   nextRefresh     DateTime @default(now())
+}
+
+// Upcoming real exams — powers the countdown + back-planned drill schedule.
+model UpcomingExam {
+  id           String   @id @default(uuid())
+  userId       String   @default("default")
+  name         String
+  subject      String
+  examDate     DateTime
+  skillNodeIds Json     @default("[]")   // covered topics (array of skillNodeIds)
+  createdAt    DateTime @default(now())
+
+  @@index([examDate])
 }
