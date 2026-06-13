@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { HAIKU } from '@/lib/claude'
+import { SONNET } from '@/lib/claude'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const response = await anthropic.messages.create({
-      model: HAIKU,
+      model: SONNET,
       max_tokens: 1024,
       system: [{ type: 'text', text: 'Extract every course from this transcript. Return ONLY a JSON array — no preamble — where each item has: courseName, courseCode, grade (as a float, e.g. 3.5), year, semester. If a field is missing, use null.', cache_control: { type: 'ephemeral' } }] as never,
       messages: [{
