@@ -52,6 +52,8 @@ export default function CourseDetailClient({ course, deadlines, linkedNodes, sub
   const [dType, setDType] = useState('exercise_set')
   const [dDate, setDDate] = useState('')
   const [dRepeat, setDRepeat] = useState('1')
+  const [gradeInput, setGradeInput] = useState<string>(course.grade != null ? String(course.grade) : '')
+  const [savingGrade, setSavingGrade] = useState(false)
   const [manageTopics, setManageTopics] = useState(false)
   const [linkedIds, setLinkedIds] = useState<Set<string>>(() => new Set(subjectTopics.filter(t => t.linked).map(t => t.id)))
   const [topicQuery, setTopicQuery] = useState('')
@@ -77,6 +79,21 @@ export default function CourseDetailClient({ course, deadlines, linkedNodes, sub
       })
       router.refresh()
     } finally { setBusy(false) }
+  }
+
+  async function saveGrade() {
+    const val = gradeInput.trim()
+    const parsed = val === '' ? null : parseFloat(val)
+    if (parsed !== null && (parsed < 1 || parsed > 5)) { showToast('info', 'Grade must be 1–5'); return }
+    setSavingGrade(true)
+    try {
+      await fetch(`/api/courses/${course.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grade: parsed ?? '' }),
+      })
+      showToast('info', parsed != null ? `Grade saved: ${parsed}` : 'Grade cleared')
+      router.refresh()
+    } finally { setSavingGrade(false) }
   }
 
   async function addDeadline() {
@@ -189,6 +206,38 @@ export default function CourseDetailClient({ course, deadlines, linkedNodes, sub
           <p className="text-sm text-gray-500">{prediction.basis} Use “Manage” below to link this course&apos;s topics.</p>
         )}
       </div>
+
+      {/* Actual grade (completed courses) */}
+      {course.status === 'completed' && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-200 mb-3 flex items-center gap-2">
+            <GraduationCap size={15} className="text-green-400" /> Actual Grade
+          </h2>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1">
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => { setGradeInput(String(n)); }} disabled={savingGrade}
+                  className={`w-9 h-9 rounded-lg text-sm font-bold border transition-colors ${
+                    gradeInput === String(n)
+                      ? 'bg-green-700 border-green-600 text-white'
+                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-green-700 hover:text-green-400'
+                  }`}>
+                  {n}
+                </button>
+              ))}
+              <button onClick={() => setGradeInput('')} disabled={savingGrade}
+                className="w-9 h-9 rounded-lg text-xs border bg-gray-800 border-gray-700 text-gray-500 hover:text-red-400 hover:border-red-800 transition-colors">
+                ✕
+              </button>
+            </div>
+            <button onClick={saveGrade} disabled={savingGrade}
+              className="flex items-center gap-1.5 px-3 py-2 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 text-white text-sm rounded-lg">
+              {savingGrade ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
+            </button>
+            {course.grade != null && <span className="text-sm text-green-400 font-semibold">Current: {course.grade}/5</span>}
+          </div>
+        </div>
+      )}
 
       {/* Workflow activity across linked topics */}
       <div className="card p-5">

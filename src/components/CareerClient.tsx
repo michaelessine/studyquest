@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Briefcase, ChevronDown, Check, Target, Sparkles, TrendingUp } from 'lucide-react'
+import { Briefcase, ChevronDown, Check, Target, Sparkles, TrendingUp, Plus, Loader2 } from 'lucide-react'
 import { SUBJECT_LABEL, Subject } from '@/lib/xp'
 
 type CareerProgress = {
@@ -40,11 +40,37 @@ function Ring({ pct, label, color }: { pct: number; label: string; color: string
   )
 }
 
+function guessSubject(name: string): string {
+  const t = name.toLowerCase()
+  if (/\b(math|calc|algebra|analysis|topolog|geometr|statistic|probab|number theory|combinat|optimiz|differential|integral|fourier|measure|stochast|numeric|ode|pde)\b/.test(t)) return 'Mathematics'
+  if (/\b(cs|csc|comput|algorithm|data struct|program|software|network|database|machine learn|artificial|cyber|web|cloud|docker|kubernetes|sql|python|git)\b/.test(t)) return 'ComputerScience'
+  if (/\b(financ|invest|portfolio|asset|derivative|option|equity|risk|banking|capital|accounting|bond|hedge|valuation|trading)\b/.test(t)) return 'Finance'
+  if (/\b(econ|micro|macro|gdp|trade|labour|labor|fiscal|monetary|game theory|market|strategy|consulting|business)\b/.test(t)) return 'Economics'
+  if (/\b(quantum|physic|thermo|electro|optic|particle|nuclear|relativit|wave|atomic|solid state)\b/.test(t)) return 'QuantumMechanics'
+  return 'Others'
+}
+
 export default function CareerClient({ progress, initialSelected }: { progress: CareerProgress[]; initialSelected: string[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected.length ? initialSelected : ['data-science']))
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [added, setAdded] = useState<Set<string>>(new Set())
+  const [adding, setAdding] = useState<Set<string>>(new Set())
   const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+
+  async function addToTree(name: string) {
+    if (added.has(name) || adding.has(name)) return
+    setAdding(prev => new Set(prev).add(name))
+    try {
+      await fetch('/api/nodes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject: guessSubject(name) }),
+      })
+      setAdded(prev => new Set(prev).add(name))
+    } finally {
+      setAdding(prev => { const n = new Set(prev); n.delete(name); return n })
+    }
+  }
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -154,12 +180,24 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {p.allTopics.map((t, i) => {
                       const cls = `text-[11px] px-2 py-0.5 rounded border ${topicChip(t)}`
-                      return t.id ? (
-                        <Link key={i} href="/skills" title={t.inTree ? `${subjLabel(t.subject ?? '')} · ${t.masteryLevel}★` : 'Not in your skill tree'} className={`${cls} hover:opacity-80 transition-opacity`}>
-                          {t.name}{t.inTree && t.masteryLevel > 0 && <span className="opacity-60"> {t.masteryLevel}★</span>}
-                        </Link>
-                      ) : (
-                        <span key={i} className={cls} title="Not in your skill tree yet">{t.name}</span>
+                      if (t.inTree && t.id) {
+                        return (
+                          <Link key={i} href="/skills" title={`${subjLabel(t.subject ?? '')} · ${t.masteryLevel}★`} className={`${cls} hover:opacity-80 transition-opacity`}>
+                            {t.name}{t.masteryLevel > 0 && <span className="opacity-60"> {t.masteryLevel}★</span>}
+                          </Link>
+                        )
+                      }
+                      const isAdded = added.has(t.name)
+                      const isAdding = adding.has(t.name)
+                      return (
+                        <span key={i} className={`${cls} inline-flex items-center gap-1 ${isAdded ? 'opacity-50' : ''}`} title={isAdded ? 'Added to your skill tree' : 'Not in your skill tree yet'}>
+                          {t.name}
+                          {!isAdded ? (
+                            <button onClick={() => addToTree(t.name)} disabled={isAdding} className="ml-0.5 hover:text-orange-400 transition-colors" title="Add to skill tree">
+                              {isAdding ? <Loader2 size={9} className="animate-spin" /> : <Plus size={9} />}
+                            </button>
+                          ) : <Check size={9} className="text-green-400" />}
+                        </span>
                       )
                     })}
                   </div>

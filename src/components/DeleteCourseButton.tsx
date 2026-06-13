@@ -27,7 +27,7 @@ export default function DeleteCourseButton({ id, name }: { id: string; name: str
 
   return (
     <button onClick={del} disabled={busy} title="Delete course"
-      className="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-gray-900/70 text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors">
+      className="absolute bottom-2 right-2 z-10 p-1.5 rounded-lg bg-gray-900/70 text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors">
       {busy ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
     </button>
   )

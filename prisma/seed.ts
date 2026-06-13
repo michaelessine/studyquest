@@ -394,10 +394,10 @@ async function seedCourses() {
 
 async function seedSessions() {
   const ago = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return d }
-  await prisma.sessionLog.createMany({ data: [
-    { rawNote: 'Real analysis — sequences and limits', durationMins: 60, xpEarned: 20, loggedAt: ago(2) },
-    { rawNote: 'ML gradient descent examples',          durationMins: 90, xpEarned: 30, loggedAt: ago(1) },
-    { rawNote: 'Quantum mechanics postulates',          durationMins: 45, xpEarned: 15, loggedAt: ago(0) },
+  await prisma.studySession.createMany({ data: [
+    { rawNote: 'Real analysis — sequences and limits', durationMins: 60, xpEarned: 20, source: 'session_log', startTime: ago(2) },
+    { rawNote: 'ML gradient descent examples',          durationMins: 90, xpEarned: 30, source: 'session_log', startTime: ago(1) },
+    { rawNote: 'Quantum mechanics postulates',          durationMins: 45, xpEarned: 15, source: 'session_log', startTime: ago(0) },
   ]})
   console.log('  ✓ Session logs seeded')
 }
@@ -499,7 +499,6 @@ async function main() {
   await prisma.learningPath.deleteMany()
   await prisma.skillDependency.deleteMany()
   await prisma.achievement.deleteMany()
-  await prisma.sessionLog.deleteMany()
   await prisma.deadline.deleteMany()
   await prisma.topic.deleteMany()
   await prisma.quizResult.deleteMany()

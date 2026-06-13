@@ -42,8 +42,8 @@ async function buildDynamicState(): Promise<string> {
       include: { course: { select: { name: true } } },
       orderBy: { dueDate: 'asc' },
     }),
-    prisma.sessionLog.findMany({
-      orderBy: { loggedAt: 'desc' },
+    prisma.studySession.findMany({
+      orderBy: { startTime: 'desc' },
       take: 5,
       include: { course: { select: { name: true } } },
     }),
@@ -72,7 +72,7 @@ UPCOMING DEADLINES (next 14 days):
 ${deadlines.map(d => `- ${d.title} [${d.type}] — ${d.course.name} — due ${d.dueDate.toISOString().split('T')[0]} — ${d.xpValue} XP (id:${d.id})`).join('\n') || 'None'}
 
 RECENT SESSIONS (last 5):
-${sessions.map(s => `- ${s.loggedAt.toISOString().split('T')[0]}: ${s.durationMins}m — ${s.rawNote}`).join('\n') || 'None'}
+${sessions.map(s => `- ${s.startTime.toISOString().split('T')[0]}: ${s.durationMins}m — ${s.rawNote ?? s.note ?? ''}`).join('\n') || 'None'}
 
 Course IDs for actions: ${courses.map(c => `${c.name}=${c.id}`).join(', ')}
 === END STATE ===`

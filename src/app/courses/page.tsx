@@ -96,9 +96,16 @@ export default async function CoursesPage() {
                           {course.name}
                         </h3>
                       </div>
-                      <span className={`badge border shrink-0 ${statusStyle(course.status)}`}>
-                        {course.status}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {course.status === 'completed' && course.grade != null && (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/50 text-green-300 border border-green-800">
+                            {course.grade}/5
+                          </span>
+                        )}
+                        <span className={`badge border ${statusStyle(course.status)}`}>
+                          {course.status}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Meta row */}

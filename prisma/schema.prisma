@@ -27,10 +27,10 @@ model Course {
   quizzesTotal      Int @default(0)
   quizzesDone       Int @default(0)
 
-  topics     Topic[]
-  deadlines  Deadline[]
-  sessions   SessionLog[]
-  skillNodes SkillNode[]
+  topics        Topic[]
+  deadlines     Deadline[]
+  studySessions StudySession[]
+  skillNodes    SkillNode[]
 }
 
 model SkillNode {
@@ -96,17 +96,6 @@ model Deadline {
   xpValue   Int      @default(100)
 
   course Course @relation(fields: [courseId], references: [id])
-}
-
-model SessionLog {
-  id           String   @id @default(uuid())
-  courseId     String?
-  loggedAt     DateTime @default(now())
-  rawNote      String
-  durationMins Int      @default(30)
-  xpEarned     Int      @default(10)
-
-  course Course? @relation(fields: [courseId], references: [id])
 }
 
 model Achievement {
@@ -248,14 +237,18 @@ model StudySession {
   id          String    @id @default(uuid())
   userId      String    @default("default")
   skillNodeId String?
+  courseId    String?   // set when logged via QuickLog (course-level, no node)
   startTime   DateTime  @default(now())
   endTime     DateTime?
   durationMins Int      @default(0)
-  source      String    @default("manual") // manual | auto
-  note        String?   // reflection / what you did
-  sourceUrl   String?   // link to e.g. a ChatGPT conversation or resource
+  source      String    @default("manual") // manual | auto | session_log
+  note        String?
+  rawNote     String?   // raw free-text note (from old SessionLog / AI chat)
+  sourceUrl   String?
+  xpEarned    Int       @default(0)
 
   skillNode SkillNode? @relation(fields: [skillNodeId], references: [id], onDelete: SetNull)
+  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }
 
 // ─── Cost-optimization models ─────────────────────────────────────────────────

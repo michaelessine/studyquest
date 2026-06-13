@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts'
-import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy, Workflow } from 'lucide-react'
+import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy, Workflow, Zap } from 'lucide-react'
 import { PHASES } from '@/lib/workflow'
+
+type PhaseResult = { phase: number; withCount: number; withAvgVelocity: number; withoutCount: number; withoutAvgVelocity: number; ratio: number }
 
 type Summary = {
   totalHours: number; totalSessions: number
@@ -20,6 +22,8 @@ type Summary = {
   starsEarned7: number; starsEarned30: number
   masteredCount: number; inProgressCount: number
   phaseTotals: Record<number, number>; phaseTotal: number
+  phaseTrend: { week: string; p1: number; p2: number; p3: number; p4: number }[]
+  methodPhases: PhaseResult[]; methodInsight: string | null
 }
 
 function Stat({ icon, label, value, sub, accent = 'text-gray-200' }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
@@ -38,7 +42,7 @@ export default function AnalyticsOverview() {
 
   useEffect(() => {
     fetch('/api/analytics/summary')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json() })
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
@@ -163,6 +167,74 @@ export default function AnalyticsOverview() {
               <Bar dataKey="hours" fill="#16a34a" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Phase activity over time — stacked bar by week */}
+      {data.phaseTrend?.some(w => w.p1 + w.p2 + w.p3 + w.p4 > 0) && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Workflow size={15} className="text-orange-400" /> Phase Activity Over Time</h2>
+          <p className="text-[10px] text-gray-600 mb-4">How your study method mix has shifted week over week (last 10 weeks).</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.phaseTrend} barSize={14}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <XAxis dataKey="week" stroke="#6b7280" fontSize={9} />
+              <YAxis stroke="#6b7280" fontSize={10} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 11 }}
+                formatter={(v, name) => [v, String(name).replace('p', 'Phase ')]} />
+              <Legend formatter={v => <span style={{ fontSize: 10, color: '#9ca3af' }}>{String(v).replace('p', 'Phase ')}</span>} />
+              {PHASES.map(p => (
+                <Bar key={p.n} dataKey={`p${p.n}`} stackId="a" fill={p.color} radius={p.n === 4 ? [3, 3, 0, 0] : undefined} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Method effectiveness — phase vs mastery velocity */}
+      {(data.methodPhases?.length ?? 0) > 0 && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Zap size={15} className="text-orange-400" /> Method Effectiveness</h2>
+          <p className="text-[10px] text-gray-600 mb-4">Topics where you logged each phase vs those where you didn&apos;t — measured by mastery gain per week.</p>
+          {data.methodInsight && (
+            <div className="mb-4 text-xs text-orange-300 bg-orange-950/30 border border-orange-800/40 rounded-lg px-3 py-2">
+              {data.methodInsight}
+            </div>
+          )}
+          <div className="space-y-3">
+            {data.methodPhases.map(p => {
+              const phase = PHASES.find(ph => ph.n === p.phase)!
+              const maxVel = Math.max(p.withAvgVelocity, p.withoutAvgVelocity, 0.01)
+              return (
+                <div key={p.phase}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: phase.color }} />
+                    <span className="text-xs text-gray-300 font-medium">{phase.n}. {phase.label}</span>
+                    <span className={`ml-auto text-[10px] font-bold ${p.ratio >= 1.2 ? 'text-green-400' : p.ratio <= 0.85 ? 'text-red-400' : 'text-gray-500'}`}>
+                      {p.ratio >= 1.1 ? `${p.ratio}× faster` : p.ratio <= 0.9 ? `${p.ratio}× slower` : 'similar'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div>
+                      <div className="text-[9px] text-gray-600 mb-0.5">With ({p.withCount} topics)</div>
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${(p.withAvgVelocity / maxVel) * 100}%`, background: phase.color }} />
+                      </div>
+                      <div className="text-[9px] text-gray-500 mt-0.5">{p.withAvgVelocity} ★/wk</div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-gray-600 mb-0.5">Without ({p.withoutCount} topics)</div>
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-gray-600" style={{ width: `${(p.withoutAvgVelocity / maxVel) * 100}%` }} />
+                      </div>
+                      <div className="text-[9px] text-gray-500 mt-0.5">{p.withoutAvgVelocity} ★/wk</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-[9px] text-gray-700 mt-4">Velocity = total mastery gain ÷ weeks since first event on that topic. Only topics with at least one mastery event are counted.</p>
         </div>
       )}
 

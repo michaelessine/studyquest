@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Loader2, DollarSign, Database, Save, AlertTriangle, Download, Upload } from 'lucide-react'
+import { Loader2, DollarSign, Database, Save, AlertTriangle, Download, Upload, Trash2 } from 'lucide-react'
 
 type Summary = {
   estimatedMonthly: number
@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState('')
+  const [resetting, setResetting] = useState(false)
 
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -35,6 +36,20 @@ export default function SettingsPage() {
     } catch (err) {
       setImportMsg(err instanceof Error ? err.message : 'Import failed')
     } finally { setImporting(false) }
+  }
+
+  async function resetAll() {
+    if (!confirm('Reset ALL data? This permanently deletes every course, topic, session, exam, quiz, and mastery record. Your monthly cap setting is kept. This CANNOT be undone — download a backup first if you want to preserve anything.')) return
+    if (!confirm('Are you absolutely sure? There is no undo.')) return
+    setResetting(true)
+    try {
+      const res = await fetch('/api/reset', { method: 'POST' })
+      if (!res.ok) throw new Error()
+      window.location.href = '/'
+    } catch {
+      alert('Reset failed. Try again.')
+      setResetting(false)
+    }
   }
 
   async function load() {
@@ -149,6 +164,19 @@ export default function SettingsPage() {
         <p className="text-[11px] text-gray-600 mt-2">
           Restore merges a backup into your current data by matching record IDs — it never deletes what isn&apos;t in the file. Tip: download a backup periodically (e.g. weekly); Neon also keeps automatic point-in-time snapshots of the database itself.
         </p>
+      </div>
+
+      {/* Danger zone — reset */}
+      <div className="card p-5 border-red-900/50">
+        <h2 className="font-semibold text-red-400 mb-3 flex items-center gap-2"><Trash2 size={15} /> Danger Zone</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Permanently delete all courses, topics, sessions, exams, quizzes, mastery history, and every other record. Your monthly cap setting is preserved. <strong className="text-red-400">This cannot be undone.</strong>
+        </p>
+        <button onClick={resetAll} disabled={resetting}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-900/50 hover:bg-red-800/60 border border-red-800 disabled:opacity-40 text-red-300 text-sm rounded-lg transition-colors">
+          {resetting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          Reset all data
+        </button>
       </div>
 
       {/* Monthly cap setting */}

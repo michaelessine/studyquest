@@ -31,12 +31,13 @@ export async function POST(req: NextRequest) {
 
         case 'logSession': {
           const xpEarned = Math.round((action.durationMins / 30) * 10)
-          await prisma.sessionLog.create({
+          await prisma.studySession.create({
             data: {
               courseId:     action.courseId || null,
               durationMins: action.durationMins,
               rawNote:      action.rawNote,
               xpEarned,
+              source:       'session_log',
             },
           })
           applied.push(`Logged ${action.durationMins}m session (+${xpEarned} XP)`)

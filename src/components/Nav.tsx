@@ -2,43 +2,101 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings, FileText, Brain, ClipboardCheck, Briefcase, BookMarked, CalendarClock, ScrollText, Workflow, Bug } from 'lucide-react'
+import {
+  LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap,
+  FlaskConical, GraduationCap, Route, BarChart3, Settings, FileText, Brain,
+  ClipboardCheck, Briefcase, BookMarked, CalendarClock, ScrollText, Workflow,
+  Bug, ChevronDown,
+} from 'lucide-react'
 
-const links = [
-  { href: '/',               label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/courses',        label: 'Courses',        icon: BookOpen },
-  { href: '/skills',         label: 'Skills',         icon: GitBranch },
-  { href: '/topics',         label: 'Topics',         icon: List },
-  { href: '/library',        label: 'Library',        icon: BookMarked },
-  { href: '/learning-paths', label: 'Learning Paths', icon: Route },
-  { href: '/quiz',           label: 'Quiz',           icon: GraduationCap },
-  { href: '/real-exam',      label: 'Real Exam',      icon: ClipboardCheck },
-  { href: '/planner',        label: 'Exam Planner',   icon: CalendarClock },
-  { href: '/exercises',      label: 'Exercises',      icon: FileText },
-  { href: '/mistakes',       label: 'Mistake Log',    icon: Bug },
-  { href: '/analytics',      label: 'Analytics',      icon: BarChart3 },
-  { href: '/learning-ability', label: 'Learning Ability', icon: Brain },
-  { href: '/career',         label: 'Career',         icon: Briefcase },
-  { href: '/transcript',     label: 'Transcript',     icon: ScrollText },
-  { href: '/schedule',       label: 'Schedule',       icon: Calendar },
-  { href: '/workflow',       label: 'Studying Workflow', icon: Workflow },
-  { href: '/techniques',     label: 'Techniques',     icon: FlaskConical },
-  { href: '/chat',           label: 'AI Chat',        icon: MessageCircle },
-  { href: '/settings',       label: 'Settings',       icon: Settings },
+type NavItem = {
+  href: string
+  label: string
+  icon: React.ElementType
+}
+
+type Section = {
+  label: string
+  items: NavItem[]
+}
+
+const sections: Section[] = [
+  {
+    label: 'Study',
+    items: [
+      { href: '/',          label: 'Dashboard',   icon: LayoutDashboard },
+      { href: '/courses',   label: 'Courses',     icon: BookOpen },
+      { href: '/skills',    label: 'Skills',      icon: GitBranch },
+      { href: '/topics',    label: 'Topics',      icon: List },
+      { href: '/exercises', label: 'Exercises',   icon: FileText },
+      { href: '/mistakes',  label: 'Mistake Log', icon: Bug },
+    ],
+  },
+  {
+    label: 'Plan',
+    items: [
+      { href: '/schedule',        label: 'Schedule',      icon: Calendar },
+      { href: '/planner',         label: 'Exam Planner',  icon: CalendarClock },
+      { href: '/real-exam',       label: 'Real Exam',     icon: ClipboardCheck },
+      { href: '/learning-paths',  label: 'Learning Paths',icon: Route },
+    ],
+  },
+  {
+    label: 'Practice',
+    items: [
+      { href: '/quiz',      label: 'Quiz',              icon: GraduationCap },
+      { href: '/workflow',  label: 'Study Workflow',    icon: Workflow },
+      { href: '/techniques',label: 'Techniques',        icon: FlaskConical },
+      { href: '/library',   label: 'Library',           icon: BookMarked },
+    ],
+  },
+  {
+    label: 'Insight',
+    items: [
+      { href: '/analytics',         label: 'Analytics',        icon: BarChart3 },
+      { href: '/learning-ability',  label: 'Learning Ability', icon: Brain },
+      { href: '/career',            label: 'Career',           icon: Briefcase },
+      { href: '/transcript',        label: 'Transcript',       icon: ScrollText },
+    ],
+  },
+  {
+    label: 'More',
+    items: [
+      { href: '/chat',     label: 'AI Chat',  icon: MessageCircle },
+      { href: '/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
-// Desktop sidebar — fixed left panel, 256px wide
+function sectionForPath(path: string): string {
+  for (const s of sections) {
+    if (s.items.some(i => i.href === path)) return s.label
+  }
+  return sections[0].label
+}
+
 export default function Nav() {
   const path = usePathname()
   const [dueCount, setDueCount] = useState(0)
   const [deadlineCount, setDeadlineCount] = useState(0)
   const [mistakeCount, setMistakeCount] = useState(0)
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+
+  // On mount + path change: ensure active section is open
+  useEffect(() => {
+    const active = sectionForPath(path)
+    setOpen(prev => ({ ...prev, [active]: true }))
+  }, [path])
 
   useEffect(() => {
     fetch('/api/reviews/due').then(r => r.json()).then(d => setDueCount(d.count ?? 0)).catch(() => {})
     fetch('/api/deadlines/due').then(r => r.json()).then(d => setDeadlineCount(d.count ?? 0)).catch(() => {})
     fetch('/api/mistakes/count').then(r => r.json()).then(d => setMistakeCount(d.count ?? 0)).catch(() => {})
-  }, [path]) // re-check when navigating
+  }, [path])
+
+  function toggle(label: string) {
+    setOpen(prev => ({ ...prev, [label]: !prev[label] }))
+  }
 
   return (
     <nav className="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-gray-900/95 backdrop-blur border-r border-gray-800 p-4 z-40">
@@ -52,47 +110,80 @@ export default function Nav() {
         </span>
       </div>
 
-      {/* Nav links — scrollable so a long menu always fits */}
-      <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto pr-1 -mr-1">
-        {links.map(({ href, label, icon: Icon }) => {
-          const active = path === href
-          const reviewBadge = href === '/topics' && dueCount > 0
-          const dlBadge = href === '/schedule' && deadlineCount > 0
-          const mistakeBadge = href === '/mistakes' && mistakeCount > 0
+      {/* Sections */}
+      <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1 -mr-1">
+        {sections.map(section => {
+          const isOpen = !!open[section.label]
+          const hasActive = section.items.some(i => i.href === path)
+
           return (
-            <div key={href} className="relative shrink-0">
-              <Link
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ${
-                  active
-                    ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50 shadow-[0_0_12px_rgba(234,88,12,0.15)]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+            <div key={section.label} className="shrink-0">
+              {/* Section header */}
+              <button
+                onClick={() => toggle(section.label)}
+                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors ${
+                  hasActive ? 'text-orange-400' : 'text-gray-500 hover:text-gray-300'
                 }`}
               >
-                <Icon size={18} className="shrink-0" />
-                <span className="text-sm font-medium">{label}</span>
-                {dlBadge && (
-                  <span title={`${deadlineCount} deadline${deadlineCount === 1 ? '' : 's'} due within a week`}
-                    className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold leading-none">
-                    {deadlineCount > 99 ? '99+' : deadlineCount}
-                  </span>
-                )}
-                {mistakeBadge && (
-                  <span title={`${mistakeCount} problem${mistakeCount === 1 ? '' : 's'} to redo`}
-                    className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-gray-600 text-white text-[10px] font-bold leading-none">
-                    {mistakeCount > 99 ? '99+' : mistakeCount}
-                  </span>
-                )}
-                {active && !reviewBadge && !dlBadge && !mistakeBadge && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
-              </Link>
-              {reviewBadge && (
-                <Link
-                  href="/review"
-                  title={`${dueCount} topic${dueCount === 1 ? '' : 's'} due for review — click to review`}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-bold leading-none transition-colors z-10"
-                >
-                  {dueCount > 99 ? '99+' : dueCount}
-                </Link>
+                <span className="text-[10px] font-bold uppercase tracking-widest">
+                  {section.label}
+                </span>
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+                />
+              </button>
+
+              {/* Items */}
+              {isOpen && (
+                <div className="flex flex-col gap-0.5 mb-1">
+                  {section.items.map(({ href, label, icon: Icon }) => {
+                    const active = path === href
+                    const reviewBadge = href === '/topics' && dueCount > 0
+                    const dlBadge = href === '/schedule' && deadlineCount > 0
+                    const mistakeBadge = href === '/mistakes' && mistakeCount > 0
+
+                    return (
+                      <div key={href} className="relative">
+                        <Link
+                          href={href}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ${
+                            active
+                              ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50 shadow-[0_0_12px_rgba(234,88,12,0.15)]'
+                              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                          }`}
+                        >
+                          <Icon size={17} className="shrink-0" />
+                          <span className="text-sm font-medium">{label}</span>
+                          {dlBadge && (
+                            <span title={`${deadlineCount} deadline${deadlineCount === 1 ? '' : 's'} due within a week`}
+                              className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold leading-none">
+                              {deadlineCount > 99 ? '99+' : deadlineCount}
+                            </span>
+                          )}
+                          {mistakeBadge && (
+                            <span title={`${mistakeCount} problem${mistakeCount === 1 ? '' : 's'} to redo`}
+                              className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-gray-600 text-white text-[10px] font-bold leading-none">
+                              {mistakeCount > 99 ? '99+' : mistakeCount}
+                            </span>
+                          )}
+                          {active && !reviewBadge && !dlBadge && !mistakeBadge && (
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />
+                          )}
+                        </Link>
+                        {reviewBadge && (
+                          <Link
+                            href="/review"
+                            title={`${dueCount} topic${dueCount === 1 ? '' : 's'} due for review — click to review`}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-bold leading-none transition-colors z-10"
+                          >
+                            {dueCount > 99 ? '99+' : dueCount}
+                          </Link>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           )

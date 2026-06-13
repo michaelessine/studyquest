@@ -7,7 +7,7 @@ export async function getTotalXP(): Promise<number> {
   const [topicCount, deadlineAgg, sessionAgg] = await Promise.all([
     prisma.topic.count({ where: { status: 'done' } }),
     prisma.deadline.aggregate({ where: { completed: true }, _sum: { xpValue: true } }),
-    prisma.sessionLog.aggregate({ _sum: { xpEarned: true } }),
+    prisma.studySession.aggregate({ _sum: { xpEarned: true } }),
   ])
 
   return topicCount * 80 + (deadlineAgg._sum.xpValue ?? 0) + (sessionAgg._sum.xpEarned ?? 0)
@@ -27,11 +27,11 @@ export function getLevelProgress(totalXP: number): { current: number; needed: nu
 
 /** Consecutive days with at least one session log, counting from today. */
 export async function getStreak(): Promise<number> {
-  const sessions = await prisma.sessionLog.findMany({ select: { loggedAt: true } })
+  const sessions = await prisma.studySession.findMany({ select: { startTime: true } })
   if (sessions.length === 0) return 0
 
   const sessionDates = new Set(
-    sessions.map(s => new Date(s.loggedAt).toISOString().split('T')[0])
+    sessions.map(s => new Date(s.startTime).toISOString().split('T')[0])
   )
 
   const today = new Date()

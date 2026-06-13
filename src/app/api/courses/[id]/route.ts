@@ -38,7 +38,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   await prisma.deadline.deleteMany({ where: { courseId: id } })
   await prisma.topic.deleteMany({ where: { courseId: id } })           // required FK → must delete
   await prisma.skillNode.updateMany({ where: { courseId: id }, data: { courseId: null } })
-  await prisma.sessionLog.updateMany({ where: { courseId: id }, data: { courseId: null } })
+  await prisma.studySession.updateMany({ where: { courseId: id }, data: { courseId: null } })
   await prisma.exerciseSet.updateMany({ where: { courseId: id }, data: { courseId: null } })
   await prisma.failedProblem.updateMany({ where: { courseId: id }, data: { courseId: null } })
   try {

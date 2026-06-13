@@ -110,10 +110,34 @@ export default async function DashboardPage() {
     .sort((a, b) => b.days - a.days)
     .slice(0, 5)
 
-  const todayData = {
-    overdue, dueSoon, reviewsDue: dueNodes.length, openMistakes,
-    exams: examsSoon, stale,
+  // ── Unified urgency-scored item list ───────────────────────────────────────
+  type TodayItem = { score: number; href: string; tone: 'red' | 'orange' | 'yellow' | 'gray'; kind: string; title: string; detail: string }
+  const todayItems: TodayItem[] = []
+
+  for (const d of overdue) {
+    todayItems.push({ score: 10000 + d.daysOverdue * 500, href: '/schedule', tone: 'red', kind: 'overdue', title: `${d.title} — overdue ${d.daysOverdue}d`, detail: d.course })
   }
+  for (const e of examsSoon) {
+    const base = e.daysLeft <= 7 ? 5000 + (7 - e.daysLeft) * 300 : 2000 + (14 - e.daysLeft) * 100
+    const boost = e.weakCount * 400
+    todayItems.push({ score: base + boost, href: '/planner', tone: e.daysLeft <= 7 ? 'red' : 'orange', kind: 'exam', title: `${e.name} — ${e.daysLeft === 0 ? 'today' : e.daysLeft === 1 ? 'tomorrow' : `${e.daysLeft}d`}`, detail: e.weakCount > 0 ? `${e.weakCount} covered topic${e.weakCount === 1 ? '' : 's'} below 3★` : 'All covered topics ready' })
+  }
+  for (const d of dueSoon) {
+    todayItems.push({ score: 4000 - d.daysLeft * 800, href: '/schedule', tone: d.daysLeft === 0 ? 'red' : 'orange', kind: 'due', title: `${d.title} — ${d.daysLeft === 0 ? 'due today' : d.daysLeft === 1 ? 'due tomorrow' : `due in ${d.daysLeft}d`}`, detail: d.course })
+  }
+  if (dueNodes.length > 0) {
+    todayItems.push({ score: 1500, href: '/review', tone: 'orange', kind: 'review', title: `${dueNodes.length} topic${dueNodes.length === 1 ? '' : 's'} due for review`, detail: 'Spaced-repetition — confirm what you still know' })
+  }
+  if (openMistakes > 0) {
+    todayItems.push({ score: 800, href: '/mistakes', tone: 'gray', kind: 'mistakes', title: `${openMistakes} problem${openMistakes === 1 ? '' : 's'} to redo`, detail: 'Work through your logged mistakes' })
+  }
+  for (const s of stale) {
+    todayItems.push({ score: 400 + s.days * 2, href: '/topics', tone: 'yellow', kind: 'stale', title: `${s.name} going stale`, detail: `${s.days} days since last update — refresh your mastery` })
+  }
+
+  todayItems.sort((a, b) => b.score - a.score)
+
+  const todayData = { items: todayItems.slice(0, 8) }
 
   return (
     <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">

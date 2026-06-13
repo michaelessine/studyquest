@@ -7,20 +7,19 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const now = new Date()
   const thirtyAgo = new Date(now.getTime() - 30 * 86_400_000)
-  const [sessionLogs, studySessions, skillNodes, masteryEvents, phaseGroups] = await Promise.all([
-    prisma.sessionLog.findMany({ select: { loggedAt: true, durationMins: true, courseId: true } }),
+  const tenWeeksAgo = new Date(now.getTime() - 10 * 7 * 86_400_000)
+  const [studySessions, skillNodes, masteryEvents, phaseGroups, phaseLogsRecent, phaseLogsAll, masteryEventsAll] = await Promise.all([
     prisma.studySession.findMany({ select: { startTime: true, durationMins: true, skillNodeId: true } }),
-    prisma.skillNode.findMany({ select: { subject: true, masteryLevel: true } }),
+    prisma.skillNode.findMany({ select: { id: true, subject: true, masteryLevel: true } }),
     prisma.masteryEvent.findMany({ where: { timestamp: { gte: thirtyAgo }, masteryGain: { gt: 0 } }, select: { masteryGain: true, timestamp: true } }),
     prisma.phaseLog.groupBy({ by: ['phase'], _count: true }),
+    prisma.phaseLog.findMany({ where: { timestamp: { gte: tenWeeksAgo } }, select: { phase: true, timestamp: true } }),
+    prisma.phaseLog.findMany({ select: { skillNodeId: true, phase: true } }),
+    prisma.masteryEvent.findMany({ where: { masteryGain: { gt: 0 } }, select: { skillNodeId: true, masteryGain: true, timestamp: true } }),
   ])
 
-  // Unify both session sources into { date, mins }
   type Entry = { date: string; mins: number }
-  const entries: Entry[] = [
-    ...sessionLogs.map(s => ({ date: s.loggedAt.toISOString().split('T')[0], mins: s.durationMins })),
-    ...studySessions.map(s => ({ date: s.startTime.toISOString().split('T')[0], mins: s.durationMins })),
-  ]
+  const entries: Entry[] = studySessions.map(s => ({ date: s.startTime.toISOString().split('T')[0], mins: s.durationMins }))
 
   const totalMins = entries.reduce((sum, e) => sum + e.mins, 0)
   const totalHours = Math.round((totalMins / 60) * 10) / 10
@@ -61,10 +60,9 @@ export async function GET() {
     { level: '★5 Mastered', count: buckets['5'],   color: '#16a34a' },
   ]
 
-  // Per-subject hours (StudySession links to nodes; SessionLog has no subject)
+  // Per-subject hours (via skillNode → subject)
   const nodeSubject = new Map<string, string>()
-  const nodesForSubject = await prisma.skillNode.findMany({ select: { id: true, subject: true } })
-  for (const n of nodesForSubject) nodeSubject.set(n.id, n.subject)
+  for (const n of skillNodes) nodeSubject.set(n.id, n.subject)
   const bySubjectMins = new Map<string, number>()
   for (const s of studySessions) {
     if (!s.skillNodeId) continue
@@ -135,6 +133,52 @@ export async function GET() {
   for (const g of phaseGroups) phaseTotals[g.phase] = g._count
   const phaseTotal = Object.values(phaseTotals).reduce((a, b) => a + b, 0)
 
+  // ── Phase trend (last 10 weeks) ────────────────────────────────────────────
+  function weekStart(date: Date): string {
+    const d = new Date(date); d.setUTCHours(0,0,0,0); d.setUTCDate(d.getUTCDate()-d.getUTCDay()); return d.toISOString().split('T')[0]
+  }
+  const phaseBuckets = new Map<string, Record<number,number>>()
+  for (const l of phaseLogsRecent) {
+    const wk = weekStart(l.timestamp)
+    if (!phaseBuckets.has(wk)) phaseBuckets.set(wk, {1:0,2:0,3:0,4:0})
+    phaseBuckets.get(wk)![l.phase] = (phaseBuckets.get(wk)![l.phase]??0)+1
+  }
+  const phaseTrendWeeks = []
+  for (let i = 9; i >= 0; i--) {
+    const d = new Date(now.getTime()-i*7*86_400_000); const wk = weekStart(d)
+    const b = phaseBuckets.get(wk)??{1:0,2:0,3:0,4:0}
+    const label = new Date(wk).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'})
+    phaseTrendWeeks.push({week:label,p1:b[1],p2:b[2],p3:b[3],p4:b[4]})
+  }
+
+  // ── Method effectiveness ────────────────────────────────────────────────────
+  const gainPerNode = new Map<string,number>()
+  const firstEvt = new Map<string,number>(); const lastEvt = new Map<string,number>()
+  for (const e of masteryEventsAll) {
+    gainPerNode.set(e.skillNodeId,(gainPerNode.get(e.skillNodeId)??0)+e.masteryGain)
+    const t = e.timestamp.getTime()
+    if (!firstEvt.has(e.skillNodeId)||t<firstEvt.get(e.skillNodeId)!) firstEvt.set(e.skillNodeId,t)
+    if (!lastEvt.has(e.skillNodeId)||t>lastEvt.get(e.skillNodeId)!) lastEvt.set(e.skillNodeId,t)
+  }
+  const phasesPerNode = new Map<string,Record<number,number>>()
+  for (const l of phaseLogsAll) {
+    if (!phasesPerNode.has(l.skillNodeId)) phasesPerNode.set(l.skillNodeId,{1:0,2:0,3:0,4:0})
+    phasesPerNode.get(l.skillNodeId)![l.phase]=(phasesPerNode.get(l.skillNodeId)![l.phase]??0)+1
+  }
+  const activeNodeIds = skillNodes.filter(n=>gainPerNode.has(n.id)).map(n=>n.id)
+  const vel = (id:string)=>{ const g=gainPerNode.get(id)??0; const f=firstEvt.get(id)!; const l=lastEvt.get(id)!; return g/Math.max(1,(l-f)/(7*86_400_000)) }
+  const methodPhases: {phase:number;withCount:number;withAvgVelocity:number;withoutCount:number;withoutAvgVelocity:number;ratio:number}[] = []
+  for (const phase of [1,2,3,4]) {
+    const w=activeNodeIds.filter(id=>(phasesPerNode.get(id)?.[phase]??0)>0)
+    const wo=activeNodeIds.filter(id=>(phasesPerNode.get(id)?.[phase]??0)===0)
+    if (w.length===0||wo.length===0) continue
+    const avg=(ids:string[])=>ids.reduce((s,id)=>s+vel(id),0)/ids.length
+    const wA=avg(w); const woA=avg(wo)
+    methodPhases.push({phase,withCount:w.length,withAvgVelocity:Math.round(wA*100)/100,withoutCount:wo.length,withoutAvgVelocity:Math.round(woA*100)/100,ratio:Math.round((woA>0?wA/woA:wA>0?2:1)*10)/10})
+  }
+  const topMethodPhase = [...methodPhases].sort((a,b)=>b.ratio-a.ratio)[0]??null
+  const methodInsight = topMethodPhase ? (topMethodPhase.ratio>=1.1 ? `Topics where you log Phase ${topMethodPhase.phase} gain mastery ${topMethodPhase.ratio}× faster than those without it.` : 'No single phase stands out yet — keep logging to see patterns.') : null
+
   return NextResponse.json({
     totalHours, totalSessions: entries.length,
     overTime, heatmap, masteryDistribution, perSubject,
@@ -145,5 +189,7 @@ export async function GET() {
     starsEarned7, starsEarned30,
     masteredCount, inProgressCount,
     phaseTotals, phaseTotal,
+    phaseTrend: phaseTrendWeeks,
+    methodPhases, methodInsight,
   })
 }
