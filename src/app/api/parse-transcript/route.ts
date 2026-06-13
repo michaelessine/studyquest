@@ -32,17 +32,16 @@ export async function POST(req: NextRequest) {
   let parsed: ParsedCourse[]
 
   try {
-    const response = await anthropic.messages.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (anthropic.beta.messages as any).create({
       model: SONNET,
       max_tokens: 1024,
-      system: [{ type: 'text', text: 'Extract every course from this transcript. Return ONLY a JSON array — no preamble — where each item has: courseName, courseCode, grade (as a float, e.g. 3.5), year, semester. If a field is missing, use null.', cache_control: { type: 'ephemeral' } }] as never,
+      betas: ['pdfs-2024-09-25'],
+      system: 'Extract every course from this transcript. Return ONLY a JSON array — no preamble — where each item has: courseName, courseCode, grade (as a float 1-5, e.g. 3.5), year (integer), semester (e.g. "Fall" or "Spring"). If a field is missing use null.',
       messages: [{
         role: 'user',
         content: [
-          {
-            type: 'document',
-            source: { type: 'base64', media_type: 'application/pdf', data: base64 },
-          } as never,
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
           { type: 'text', text: 'Extract all courses from this transcript as instructed.' },
         ],
       }],
@@ -53,14 +52,14 @@ export async function POST(req: NextRequest) {
     parsed = JSON.parse(json)
     if (!Array.isArray(parsed)) throw new Error('Expected array')
   } catch (err) {
-    console.error('Transcript parsing error:', err)
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Transcript parsing error:', msg)
     return NextResponse.json(
-      { error: 'Could not parse the transcript. Ensure the PDF is a readable academic document.' },
+      { error: `Could not parse the transcript: ${msg}` },
       { status: 422 }
     )
   }
 
-  // Insert all extracted courses; skip any that fail (e.g. name too long or duplicate)
   const created: { id: string; name: string }[] = []
   for (const c of parsed) {
     if (!c.courseName) continue
@@ -79,7 +78,7 @@ export async function POST(req: NextRequest) {
       })
       created.push({ id: course.id, name: course.name })
     } catch {
-      // skip on conflict / constraint error
+      // skip duplicates / constraint errors
     }
   }
 
@@ -93,5 +92,5 @@ function guessSubject(name: string, code: string | null): string {
   if (/\b(financ|invest|portfolio|asset|derivative|option|equity|risk manag|banking|capital market|accounting|bond|hedge|valuation)\b/.test(t)) return 'Finance'
   if (/\b(econ|micro|macro|gdp|trade|labour|labor|fiscal|monetary|game theory|develop|welfare)\b/.test(t)) return 'Economics'
   if (/\b(physic|quantum|thermo|electro|optic|particle|nuclear|relativit|wave|atomic|solid state|spectro|mech\b)\b/.test(t)) return 'QuantumMechanics'
-  return 'Mathematics'
+  return 'Others'
 }
