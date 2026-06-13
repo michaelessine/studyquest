@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await (anthropic.beta.messages as any).create({
       model: SONNET,
-      max_tokens: 1024,
+      max_tokens: 4096,
       betas: ['pdfs-2024-09-25'],
       system: 'Extract every course from this transcript. Return ONLY a JSON array — no preamble — where each item has: courseName, courseCode, grade (as a float 1-5, e.g. 3.5), year (integer), semester (e.g. "Fall" or "Spring"). If a field is missing use null.',
       messages: [{
