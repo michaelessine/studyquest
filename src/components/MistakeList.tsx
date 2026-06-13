@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Loader2, Trash2, RotateCcw, CheckCircle2, Bug, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Loader2, Trash2, RotateCcw, CheckCircle2, Bug, ChevronDown, GraduationCap } from 'lucide-react'
 import { useToast } from './ToastProvider'
 
 export type Mistake = {
@@ -133,6 +134,12 @@ export default function MistakeList({ courseId, skillNodeId, topics, heading, de
                 <div className="px-3 pb-3 pt-1 space-y-2 border-t border-gray-800/70">
                   {m.details && <div className="text-xs text-gray-400 whitespace-pre-wrap">{m.details}</div>}
                   <ReasonEditor initial={m.reason ?? ''} onSave={r => patch(m.id, { reason: r })} />
+                  {m.skillNodeId && (
+                    <Link href={`/practice/${m.skillNodeId}`}
+                      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-orange-900/40 border border-orange-800/50 text-orange-300 hover:bg-orange-800/40 rounded-lg transition-colors">
+                      <GraduationCap size={13} /> Practice this topic
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

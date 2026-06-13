@@ -126,5 +126,14 @@ Topics (by index):\n${indexedList}\nNotes: "${trimNotes(notes)}"`
     },
   })
 
-  return NextResponse.json({ exam, analysis: { insight, reviewTopics }, applied, consolidation })
+  // Retrospective: surface problems you'd previously logged on these topics.
+  const openMistakes = await prisma.failedProblem.findMany({
+    where: { resolved: false, skillNodeId: { in: nodes.map(n => n.id) } },
+    select: { id: true, title: true, skillNodeId: true }, orderBy: { createdAt: 'desc' },
+  })
+  const loggedMistakes = openMistakes.map(m => ({
+    id: m.id, title: m.title, topicName: m.skillNodeId ? nodeName.get(m.skillNodeId) ?? null : null,
+  }))
+
+  return NextResponse.json({ exam, analysis: { insight, reviewTopics }, applied, consolidation, loggedMistakes })
 }

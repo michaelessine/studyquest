@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, GraduationCap, Sparkles, AlertTriangle, CheckCircle2, Upload, Route } from 'lucide-react'
+import { Loader2, GraduationCap, Sparkles, AlertTriangle, CheckCircle2, Upload, Route, Bug } from 'lucide-react'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from './ToastProvider'
 import WeakSpotDiagnosis from './WeakSpotDiagnosis'
@@ -15,6 +15,7 @@ type Analysis = {
   reviewTopics: string[]
 }
 type Consolidation = { pathId: string; headline: string; topics: { id: string; name: string; reason: string }[] }
+type LoggedMistake = { id: string; title: string; topicName: string | null }
 
 // 1–5 grading scale (5 = excellent) plus an explicit Fail.
 const GRADES = ['5', '4', '3', '2', '1', 'Fail']
@@ -31,6 +32,12 @@ export default function RealExamClient({ nodes, recentExams }: { nodes: Node[]; 
   const [loading, setLoading]   = useState(false)
   const [mapping, setMapping]   = useState(false)
   const [result, setResult]     = useState<{ analysis: Analysis; applied: { skillNodeId: string; newMasteryLevel: number; capped: boolean }[]; consolidation: Consolidation | null } | null>(null)
+  const [retroMistakes, setRetroMistakes] = useState<LoggedMistake[]>([])
+
+  async function resolveMistake(id: string) {
+    await fetch('/api/mistakes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, resolved: true }) }).catch(() => {})
+    setRetroMistakes(prev => prev.filter(m => m.id !== id))
+  }
 
   const subjectNodes = nodes.filter(n => n.subject === subject)
   const nameById = new Map(nodes.map(n => [n.id, n.name]))
@@ -73,6 +80,7 @@ export default function RealExamClient({ nodes, recentExams }: { nodes: Node[]; 
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setResult({ analysis: data.analysis, applied: data.applied, consolidation: data.consolidation ?? null })
+      setRetroMistakes(data.loggedMistakes ?? [])
       showToast('info', `Exam analyzed — ${data.applied.length} topic(s) updated`)
       router.refresh()
     } catch (e) {
@@ -138,6 +146,29 @@ export default function RealExamClient({ nodes, recentExams }: { nodes: Node[]; 
             </div>
           )}
         </div>
+        {/* Retrospective — problems you'd logged on these topics */}
+        {retroMistakes.length > 0 && (
+          <div className="card p-5">
+            <h2 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Bug size={15} className="text-orange-400" /> Retrospective</h2>
+            <p className="text-[11px] text-gray-600 mb-3">You&apos;d logged these problems on the topics this exam covered. Did they show up? Tick the ones you&apos;ve now nailed.</p>
+            <div className="space-y-1.5">
+              {retroMistakes.map(m => (
+                <div key={m.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-800/50">
+                  <button onClick={() => resolveMistake(m.id)} title="Mark resolved"
+                    className="shrink-0 w-5 h-5 rounded border border-gray-600 hover:border-green-500 flex items-center justify-center">
+                    <CheckCircle2 size={12} className="text-gray-600 hover:text-green-400" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-gray-200 truncate">{m.title}</div>
+                    {m.topicName && <div className="text-[10px] text-gray-600">{m.topicName}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link href="/mistakes" className="inline-block mt-2 text-[11px] text-orange-400 hover:text-orange-300">Open Mistake Log →</Link>
+          </div>
+        )}
+
         {result.analysis.reviewTopics?.length > 0 && (
           <div className="card p-5">
             <h2 className="font-semibold text-gray-200 mb-2">Review Suggested</h2>
@@ -161,7 +192,7 @@ export default function RealExamClient({ nodes, recentExams }: { nodes: Node[]; 
             />
           </div>
         )}
-        <button onClick={() => { setResult(null); setSelected(new Set()); setExamName(''); setNotes('') }}
+        <button onClick={() => { setResult(null); setSelected(new Set()); setExamName(''); setNotes(''); setRetroMistakes([]) }}
           className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm rounded-lg">
           Log another exam
         </button>
