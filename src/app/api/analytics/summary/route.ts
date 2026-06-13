@@ -7,11 +7,12 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const now = new Date()
   const thirtyAgo = new Date(now.getTime() - 30 * 86_400_000)
-  const [sessionLogs, studySessions, skillNodes, masteryEvents] = await Promise.all([
+  const [sessionLogs, studySessions, skillNodes, masteryEvents, phaseGroups] = await Promise.all([
     prisma.sessionLog.findMany({ select: { loggedAt: true, durationMins: true, courseId: true } }),
     prisma.studySession.findMany({ select: { startTime: true, durationMins: true, skillNodeId: true } }),
     prisma.skillNode.findMany({ select: { subject: true, masteryLevel: true } }),
     prisma.masteryEvent.findMany({ where: { timestamp: { gte: thirtyAgo }, masteryGain: { gt: 0 } }, select: { masteryGain: true, timestamp: true } }),
+    prisma.phaseLog.groupBy({ by: ['phase'], _count: true }),
   ])
 
   // Unify both session sources into { date, mins }
@@ -129,6 +130,11 @@ export async function GET() {
   const masteredCount = skillNodes.filter(n => n.masteryLevel >= 5).length
   const inProgressCount = skillNodes.filter(n => n.masteryLevel > 0 && n.masteryLevel < 5).length
 
+  // ── Studying-workflow phase balance (all topics) ────────────────────────────
+  const phaseTotals: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
+  for (const g of phaseGroups) phaseTotals[g.phase] = g._count
+  const phaseTotal = Object.values(phaseTotals).reduce((a, b) => a + b, 0)
+
   return NextResponse.json({
     totalHours, totalSessions: entries.length,
     overTime, heatmap, masteryDistribution, perSubject,
@@ -138,5 +144,6 @@ export async function GET() {
     activeDays30, avgSessionMins, busiestDay,
     starsEarned7, starsEarned30,
     masteredCount, inProgressCount,
+    phaseTotals, phaseTotal,
   })
 }

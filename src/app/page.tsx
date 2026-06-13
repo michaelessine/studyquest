@@ -5,6 +5,7 @@ import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircl
 import Link from 'next/link'
 import DashboardClient from '@/components/DashboardClient'
 import QuickLog from '@/components/QuickLog'
+import TodayCenter from '@/components/TodayCenter'
 
 function urgencyClass(d: number) {
   return d <= 2 ? 'text-red-400' : d <= 5 ? 'text-yellow-400' : 'text-gray-400'
@@ -15,8 +16,8 @@ function typeBadge(t: string) {
 }
 
 export default async function DashboardPage() {
-  const [skillNodes, upcomingDeadlines, activeTopics, recentExams] = await Promise.all([
-    prisma.skillNode.findMany({ select: { id: true, name: true, subject: true, status: true, masteryLevel: true, nextReviewAt: true, reviewIntervalDays: true } }),
+  const [skillNodes, upcomingDeadlines, activeTopics, recentExams, openDeadlines, openMistakes, upcomingExamsRaw] = await Promise.all([
+    prisma.skillNode.findMany({ select: { id: true, name: true, subject: true, status: true, masteryLevel: true, nextReviewAt: true, reviewIntervalDays: true, masteryUpdatedAt: true } }),
     prisma.deadline.findMany({
       where: { completed: false }, orderBy: { dueDate: 'asc' }, take: 6,
       include: { course: { select: { name: true, subject: true } } },
@@ -31,6 +32,9 @@ export default async function DashboardPage() {
       orderBy: { takenAt: 'desc' }, take: 5,
       include: { quiz: { select: { subject: true, topicName: true } } },
     }),
+    prisma.deadline.findMany({ where: { completed: false }, orderBy: { dueDate: 'asc' }, include: { course: { select: { name: true } } } }),
+    prisma.failedProblem.count({ where: { resolved: false } }),
+    prisma.upcomingExam.findMany({ orderBy: { examDate: 'asc' } }),
   ])
 
   // Pinned learning path (Feature 1 integration)
@@ -78,6 +82,39 @@ export default async function DashboardPage() {
     nextReviewAt: n.nextReviewAt?.toISOString() ?? null, reviewIntervalDays: n.reviewIntervalDays,
   }))
 
+  // ── Today command center data ───────────────────────────────────────────────
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const DAY = 86_400_000
+  const daysFrom = (d: Date) => Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - startOfToday.getTime()) / DAY)
+  const masteryById = new Map(skillNodes.map(n => [n.id, n.masteryLevel]))
+
+  const overdue = openDeadlines.filter(d => daysFrom(d.dueDate) < 0)
+    .map(d => ({ id: d.id, title: d.title, course: d.course?.name ?? '', daysOverdue: Math.abs(daysFrom(d.dueDate)) }))
+  const dueSoon = openDeadlines.filter(d => { const dl = daysFrom(d.dueDate); return dl >= 0 && dl <= 3 })
+    .map(d => ({ id: d.id, title: d.title, course: d.course?.name ?? '', daysLeft: daysFrom(d.dueDate) }))
+
+  const examsSoon = upcomingExamsRaw
+    .map(e => {
+      const ids = Array.isArray(e.skillNodeIds) ? (e.skillNodeIds as string[]) : []
+      const daysLeft = daysFrom(e.examDate)
+      const weakCount = ids.filter(id => (masteryById.get(id) ?? 0) < 3).length
+      return { id: e.id, name: e.name, daysLeft, weakCount }
+    })
+    .filter(e => e.daysLeft >= 0 && e.daysLeft <= 14)
+    .slice(0, 3)
+
+  const dueReviewIds = new Set(dueNodes.map(n => n.id))
+  const stale = skillNodes
+    .filter(n => n.masteryLevel >= 3 && n.masteryUpdatedAt && (now.getTime() - n.masteryUpdatedAt.getTime()) > 45 * DAY && !dueReviewIds.has(n.id))
+    .map(n => ({ id: n.id, name: n.name, subject: n.subject, days: Math.floor((now.getTime() - n.masteryUpdatedAt!.getTime()) / DAY) }))
+    .sort((a, b) => b.days - a.days)
+    .slice(0, 5)
+
+  const todayData = {
+    overdue, dueSoon, reviewsDue: dueNodes.length, openMistakes,
+    exams: examsSoon, stale,
+  }
+
   return (
     <div className="p-5 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -89,6 +126,9 @@ export default async function DashboardPage() {
           <Workflow size={13} className="text-orange-400/80" /> Studying Workflow
         </Link>
       </div>
+
+      {/* Today — prioritized command center */}
+      <TodayCenter data={todayData} />
 
       {/* Client-only features: weekly review banner + connections feed */}
       <DashboardClient skillNodes={plainSkillNodes} />

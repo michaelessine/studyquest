@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Clock, Search, X, Link as LinkIcon, NotebookPen } from 'lucide-react'
 import { SUBJECT_LABEL, Subject } from '@/lib/xp'
+import { PHASES } from '@/lib/workflow'
 import { useToast } from './ToastProvider'
 import StarRating from './StarRating'
 
@@ -24,6 +25,7 @@ export default function QuickLog() {
   const [rating, setRating] = useState(0)
   const [note, setNote] = useState('')
   const [url, setUrl] = useState('')
+  const [phase, setPhase] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
 
@@ -49,14 +51,14 @@ export default function QuickLog() {
     try {
       const res = await fetch('/api/log-study', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skillNodeId: picked.id, durationMins: parseInt(mins) || 30, selfRating: rate ? rating : null, note, sourceUrl: url }),
+        body: JSON.stringify({ skillNodeId: picked.id, durationMins: parseInt(mins) || 30, selfRating: rate ? rating : null, note, sourceUrl: url, phase }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       showToast('info', `Logged ${mins}m on ${picked.name}${data.newMasteryLevel != null ? ` · ${data.newMasteryLevel}★` : ''}`)
       const unlocked: string[] = data.unlockedNames ?? []
       if (unlocked.length > 0) showToast('info', `🔓 Unlocked: ${unlocked.slice(0, 4).join(', ')}${unlocked.length > 4 ? ` +${unlocked.length - 4} more` : ''}`)
-      setPicked(null); setQuery(''); setMins('30'); setRate(false); setRating(0); setNote(''); setUrl('')
+      setPicked(null); setQuery(''); setMins('30'); setRate(false); setRating(0); setNote(''); setUrl(''); setPhase(null)
       loadLogs(); router.refresh()
     } catch (e) {
       showToast('info', e instanceof Error ? e.message : 'Failed to log')
@@ -109,6 +111,20 @@ export default function QuickLog() {
           Update self-rating
         </label>
         {rate && <StarRating value={rating} onChange={setRating} size="sm" />}
+      </div>
+
+      {/* Workflow phase (optional) */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        <span className="text-[11px] text-gray-500 mr-0.5">Phase:</span>
+        {PHASES.map(p => (
+          <button key={p.n} onClick={() => setPhase(phase === p.n ? null : p.n)} title={p.hint}
+            className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+              phase === p.n ? 'border-transparent text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
+            }`}
+            style={phase === p.n ? { background: p.color } : undefined}>
+            {p.n}. {p.short}
+          </button>
+        ))}
       </div>
 
       {/* Note + source link */}

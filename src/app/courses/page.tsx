@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import AddCourseModal from '@/components/AddCourseModal'
+import DeleteCourseButton from '@/components/DeleteCourseButton'
 import Link from 'next/link'
 import { BookOpen, ChevronRight } from 'lucide-react'
 
@@ -82,14 +83,16 @@ export default async function CoursesPage() {
                 const qzPct = course.quizzesTotal > 0 ? Math.round((course.quizzesDone / course.quizzesTotal) * 100) : null
 
                 return (
-                  <Link key={course.id} href={`/courses/${course.id}`} className="card p-4 hover:border-gray-700 transition-colors block">
+                  <div key={course.id} className="relative">
+                  <DeleteCourseButton id={course.id} name={course.name} />
+                  <Link href={`/courses/${course.id}`} className="card p-4 hover:border-gray-700 transition-colors block">
                     {/* Course header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0">
                         {course.code && (
                           <span className="text-xs text-gray-500 font-mono">{course.code}</span>
                         )}
-                        <h3 className="text-sm font-semibold text-gray-200 leading-snug">
+                        <h3 className="text-sm font-semibold text-gray-200 leading-snug pr-6">
                           {course.name}
                         </h3>
                       </div>
@@ -129,6 +132,7 @@ export default async function CoursesPage() {
                       Open course <ChevronRight size={11} />
                     </span>
                   </Link>
+                  </div>
                 )
               })}
             </div>

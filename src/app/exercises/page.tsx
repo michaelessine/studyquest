@@ -5,6 +5,7 @@ import { Loader2, Upload, FileText, CheckCircle2 } from 'lucide-react'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from '@/components/ToastProvider'
 import WeakSpotDiagnosis from '@/components/WeakSpotDiagnosis'
+import MistakeList from '@/components/MistakeList'
 
 type CourseOpt = { id: string; name: string; code: string | null; subject: string }
 
@@ -161,6 +162,19 @@ export default function ExercisesPage() {
                 <span className="text-orange-300 font-semibold">→ {a.newMasteryLevel}★ {a.capped && <span className="text-yellow-500 text-xs">(capped 4.0)</span>}</span>
               </div>
             ))}
+
+          {/* Log the specific problems you missed → mistake log */}
+          {analysis && pct < 100 && (
+            <div className="mt-4 border-t border-gray-800 pt-3">
+              <MistakeList
+                heading="Log the problems you missed"
+                courseId={courseId || undefined}
+                topics={analysis.topics.map(t => ({ id: t.skillNodeId, name: t.name }))}
+                source="exercise_set"
+                sourceRef={file?.name}
+              />
+            </div>
+          )}
 
           {/* Weak-spot diagnosis when the set wasn't solved well */}
           {pct < 80 && analysis && analysis.topics[0] && (

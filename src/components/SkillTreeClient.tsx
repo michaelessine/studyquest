@@ -13,6 +13,8 @@ import StarRating from './StarRating'
 import QuizPanel from './QuizPanel'
 import LearningToolsPanel from './LearningToolsPanel'
 import TechniqueTips from './TechniqueTips'
+import WorkflowPanel from './WorkflowPanel'
+import MistakeList from './MistakeList'
 
 const ReactFlow  = dynamic(() => import('@xyflow/react').then(m => m.ReactFlow),  { ssr: false, loading: () => <div className="flex items-center justify-center h-full gap-3 text-gray-500"><Loader2 size={28} className="animate-spin text-orange-500" /><span className="text-sm">Loading…</span></div> })
 const Background = dynamic(() => import('@xyflow/react').then(m => m.Background), { ssr: false })
@@ -224,6 +226,20 @@ function SidePanel({ node, deps, allNodes, onRate, onClose, saving, onMasteryUpd
             ))}
           </div>
         </div>
+
+        {/* Studying workflow — repeatable phase tracking + core tricks */}
+        {node.status !== 'locked' && (
+          <div className="border-t border-gray-800 pt-4">
+            <WorkflowPanel key={node.id} skillNodeId={node.id} />
+          </div>
+        )}
+
+        {/* Failed problems to redo for this topic */}
+        {node.status !== 'locked' && (
+          <div className="border-t border-gray-800 pt-4">
+            <MistakeList key={`m-${node.id}`} skillNodeId={node.id} heading="Problems to Redo" compact />
+          </div>
+        )}
 
         {/* Study techniques (PART 10) */}
         {node.status !== 'locked' && (

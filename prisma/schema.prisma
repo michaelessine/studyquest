@@ -400,6 +400,43 @@ model APIUsage {
   nextRefresh     DateTime @default(now())
 }
 
+// A problem you got wrong — captured from an exercise set / exam / manually.
+// Later annotate WHY you failed and mark resolved once you've redone it.
+model FailedProblem {
+  id          String    @id @default(uuid())
+  userId      String    @default("default")
+  courseId    String?
+  skillNodeId String?
+  source      String    @default("manual") // exercise_set | exam | manual
+  sourceRef   String?   // e.g. "Pset 5" or exam name
+  title       String    // short label, e.g. "Problem 3 — Lagrangian duality"
+  details     String?   // the problem statement / what was asked
+  reason      String?   // why I failed: logic flaw, weak point, missing concept
+  resolved    Boolean   @default(false) // redone successfully
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([courseId])
+  @@index([skillNodeId])
+  @@index([resolved])
+}
+
+// Repeatable studying-workflow activity per topic. Phases 1–4 map to the
+// Studying Workflow page. A Phase-2 log with a note = a captured "Core Trick".
+model PhaseLog {
+  id           String   @id @default(uuid())
+  userId       String   @default("default")
+  skillNodeId  String
+  phase        Int      // 1=Gather, 2=Proofs, 3=Homework, 4=Recall
+  note         String?  // Core Trick text or reflection
+  durationMins Int?     // set when logged via a study session
+  source       String   @default("panel") // panel | session
+  timestamp    DateTime @default(now())
+
+  @@index([skillNodeId])
+  @@index([phase])
+}
+
 // Upcoming real exams — powers the countdown + back-planned drill schedule.
 model UpcomingExam {
   id           String   @id @default(uuid())

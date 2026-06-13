@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Loader2, DollarSign, Database, Save, AlertTriangle, Download } from 'lucide-react'
+import { Loader2, DollarSign, Database, Save, AlertTriangle, Download, Upload } from 'lucide-react'
 
 type Summary = {
   estimatedMonthly: number
@@ -16,6 +16,26 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [capInput, setCapInput] = useState('5')
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
+
+  async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!confirm('Restore from this backup? It merges the backup into your current data (matching records are overwritten). This cannot be undone — export a fresh backup first if unsure.')) return
+    setImporting(true); setImportMsg('')
+    try {
+      const text = await file.text()
+      const res = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Import failed')
+      setImportMsg(`Restored ${d.total} records. Reloading…`)
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (err) {
+      setImportMsg(err instanceof Error ? err.message : 'Import failed')
+    } finally { setImporting(false) }
+  }
 
   async function load() {
     setLoading(true)
@@ -115,10 +135,20 @@ export default function SettingsPage() {
         <p className="text-xs text-gray-500 mb-3">
           Your data lives in a single database. Download a full JSON backup of your topics, mastery history, study sessions, exams, and notes. Keep it somewhere safe — it&apos;s your safety net if anything goes wrong.
         </p>
-        <a href="/api/export" download
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors">
-          <Download size={14} /> Download backup (JSON)
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <a href="/api/export" download
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors">
+            <Download size={14} /> Download backup (JSON)
+          </a>
+          <label className={`inline-flex items-center gap-1.5 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm rounded-lg transition-colors cursor-pointer ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
+            {importing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Restore from backup
+            <input type="file" accept=".json,application/json" className="hidden" onChange={onImportFile} disabled={importing} />
+          </label>
+        </div>
+        {importMsg && <p className="text-xs text-gray-400 mt-2">{importMsg}</p>}
+        <p className="text-[11px] text-gray-600 mt-2">
+          Restore merges a backup into your current data by matching record IDs — it never deletes what isn&apos;t in the file. Tip: download a backup periodically (e.g. weekly); Neon also keeps automatic point-in-time snapshots of the database itself.
+        </p>
       </div>
 
       {/* Monthly cap setting */}

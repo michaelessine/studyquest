@@ -7,7 +7,9 @@ import {
   ClipboardList, BookOpen, AlertTriangle, Loader2, Target, TrendingUp, Search, X,
 } from 'lucide-react'
 import { SUBJECT_LABEL, Subject } from '@/lib/xp'
+import { PHASES } from '@/lib/workflow'
 import { useToast } from '@/components/ToastProvider'
+import MistakeList from '@/components/MistakeList'
 import type { GradePrediction } from '@/lib/courseGrade'
 
 type Course = {
@@ -37,9 +39,10 @@ function daysUntil(iso: string): number {
   return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()) / 86_400_000)
 }
 
-export default function CourseDetailClient({ course, deadlines, linkedNodes, subjectTopics, avgPctSolved, avgMastery, prediction }: {
+export default function CourseDetailClient({ course, deadlines, linkedNodes, subjectTopics, avgPctSolved, avgMastery, prediction, phaseCounts }: {
   course: Course; deadlines: Deadline[]; linkedNodes: Node[]; subjectTopics: SubjectTopic[]
   avgPctSolved: number | null; avgMastery: number | null; prediction: GradePrediction
+  phaseCounts: Record<number, number>
 }) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -187,6 +190,35 @@ export default function CourseDetailClient({ course, deadlines, linkedNodes, sub
         )}
       </div>
 
+      {/* Workflow activity across linked topics */}
+      <div className="card p-5">
+        <h2 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><TrendingUp size={15} className="text-orange-400" /> Workflow Activity</h2>
+        <p className="text-[11px] text-gray-600 mb-3">How many times you&apos;ve done each studying phase across this course&apos;s linked topics.</p>
+        {(() => {
+          const max = Math.max(1, ...PHASES.map(p => phaseCounts[p.n] ?? 0))
+          const totalPhase = PHASES.reduce((a, p) => a + (phaseCounts[p.n] ?? 0), 0)
+          if (totalPhase === 0) return <p className="text-sm text-gray-500">No workflow activity yet. Log phases from a topic&apos;s panel or tag a phase when you Quick Log.</p>
+          return (
+            <div className="space-y-2">
+              {PHASES.map(p => {
+                const c = phaseCounts[p.n] ?? 0
+                return (
+                  <div key={p.n} className="flex items-center gap-3">
+                    <span className="w-24 shrink-0 text-xs text-gray-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />{p.short}
+                    </span>
+                    <div className="flex-1 h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(c / max) * 100}%`, background: p.color }} />
+                    </div>
+                    <span className="w-8 shrink-0 text-right text-xs font-semibold text-gray-300 tabular-nums">{c}×</span>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
+      </div>
+
       {/* Deadlines */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-3">
@@ -251,6 +283,15 @@ export default function CourseDetailClient({ course, deadlines, linkedNodes, sub
             })}
           </div>
         )}
+      </div>
+
+      {/* Failed problems to redo */}
+      <div className="card p-5">
+        <MistakeList
+          heading="Problems to Redo"
+          courseId={course.id}
+          topics={linkedNodes.map(n => ({ id: n.id, name: n.name }))}
+        />
       </div>
 
       {/* Linked topics */}

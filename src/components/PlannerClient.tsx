@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarClock, Plus, Trash2, Search, X, Loader2, AlertTriangle, CheckCircle2, Target } from 'lucide-react'
+import Link from 'next/link'
+import { CalendarClock, Plus, Trash2, Search, X, Loader2, AlertTriangle, CheckCircle2, Target, Bug } from 'lucide-react'
 import { SUBJECTS, SUBJECT_LABEL, Subject } from '@/lib/xp'
 import { useToast } from '@/components/ToastProvider'
 import type { ExamPlan } from '@/lib/examPlan'
 
-type Exam = { id: string; name: string; subject: string; examDate: string; plan: ExamPlan }
+type Mistake = { id: string; title: string; topicName: string | null }
+type Exam = { id: string; name: string; subject: string; examDate: string; plan: ExamPlan; mistakes: Mistake[] }
 type Topic = { id: string; name: string; subject: string; masteryLevel: number; courseId: string | null }
 type CourseOpt = { id: string; name: string; code: string | null; subject: string }
 
@@ -233,6 +235,24 @@ function ExamCard({ exam, onDelete }: { exam: Exam; onDelete: () => void }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Logged mistakes to redo for this exam's topics */}
+      {!plan.overdue && exam.mistakes.length > 0 && (
+        <div className="mt-4 border-t border-gray-800 pt-3">
+          <div className="text-[11px] font-semibold text-red-400/90 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Bug size={12} /> Problems to redo ({exam.mistakes.length})
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {exam.mistakes.slice(0, 12).map(m => (
+              <span key={m.id} className="bg-red-950/20 border border-red-900/30 text-red-200/90 rounded px-2 py-0.5 text-xs" title={m.topicName ?? ''}>
+                {m.title}
+              </span>
+            ))}
+            {exam.mistakes.length > 12 && <span className="text-[11px] text-gray-600 self-center">+{exam.mistakes.length - 12} more</span>}
+          </div>
+          <Link href="/mistakes" className="inline-block mt-2 text-[11px] text-orange-400 hover:text-orange-300">Open Mistake Log →</Link>
         </div>
       )}
     </div>

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { skillNodeId, durationMins, selfRating, note, sourceUrl } = await req.json()
+  const { skillNodeId, durationMins, selfRating, note, sourceUrl, phase } = await req.json()
   if (!skillNodeId || !durationMins) return NextResponse.json({ error: 'skillNodeId and durationMins required' }, { status: 400 })
 
   // 1) Always record the study session (feeds time-vs-gain efficiency + velocity time)
@@ -37,6 +37,14 @@ export async function POST(req: NextRequest) {
       endTime: new Date(),
     },
   })
+
+  // 1b) Workflow-aware logging — tag which phase this session was
+  const ph = parseInt(phase)
+  if (ph >= 1 && ph <= 4) {
+    await prisma.phaseLog.create({
+      data: { skillNodeId, phase: ph, durationMins: Math.max(1, Math.round(durationMins)), source: 'session', note: note?.slice(0, 500) || null },
+    }).catch(() => {})
+  }
 
   // 2) Optional manual self-rating — set mastery directly, log a MasteryEvent
   let newMasteryLevel: number | null = null

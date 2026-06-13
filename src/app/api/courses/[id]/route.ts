@@ -33,7 +33,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  await prisma.deadline.deleteMany({ where: { courseId: params.id } })
-  await prisma.course.delete({ where: { id: params.id } }).catch(() => {})
+  const id = params.id
+  // Clear everything that references the course (FK constraints would block delete).
+  await prisma.deadline.deleteMany({ where: { courseId: id } })
+  await prisma.topic.deleteMany({ where: { courseId: id } })           // required FK → must delete
+  await prisma.skillNode.updateMany({ where: { courseId: id }, data: { courseId: null } })
+  await prisma.sessionLog.updateMany({ where: { courseId: id }, data: { courseId: null } })
+  await prisma.exerciseSet.updateMany({ where: { courseId: id }, data: { courseId: null } })
+  await prisma.failedProblem.updateMany({ where: { courseId: id }, data: { courseId: null } })
+  try {
+    await prisma.course.delete({ where: { id } })
+  } catch (err) {
+    console.error('Course delete failed:', err)
+    return NextResponse.json({ error: 'Could not delete course' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }

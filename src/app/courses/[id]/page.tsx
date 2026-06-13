@@ -16,6 +16,15 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
   ])
 
   const linkedNodes = subjectNodes.filter(n => n.courseId === course.id)
+
+  // Workflow phase activity aggregated across this course's linked topics
+  const phaseCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
+  if (linkedNodes.length > 0) {
+    const grouped = await prisma.phaseLog.groupBy({
+      by: ['phase'], where: { skillNodeId: { in: linkedNodes.map(n => n.id) } }, _count: true,
+    })
+    for (const g of grouped) phaseCounts[g.phase] = g._count
+  }
   const solved = exerciseSets.map(e => e.pctSolved).filter((p): p is number => p != null)
   const avgPctSolved = solved.length > 0 ? Math.round(solved.reduce((a, b) => a + b, 0) / solved.length) : null
   const avgMastery = linkedNodes.length > 0
@@ -38,6 +47,7 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
       avgPctSolved={avgPctSolved}
       avgMastery={avgMastery}
       prediction={prediction}
+      phaseCounts={phaseCounts}
     />
   )
 }

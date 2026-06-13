@@ -4,7 +4,8 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
-import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy } from 'lucide-react'
+import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy, Workflow } from 'lucide-react'
+import { PHASES } from '@/lib/workflow'
 
 type Summary = {
   totalHours: number; totalSessions: number
@@ -18,6 +19,7 @@ type Summary = {
   activeDays30: number; avgSessionMins: number; busiestDay: string | null
   starsEarned7: number; starsEarned30: number
   masteredCount: number; inProgressCount: number
+  phaseTotals: Record<number, number>; phaseTotal: number
 }
 
 function Stat({ icon, label, value, sub, accent = 'text-gray-200' }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
@@ -163,6 +165,46 @@ export default function AnalyticsOverview() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Studying workflow balance — across all topics/subjects */}
+      <div className="card p-5">
+        <h2 className="font-semibold text-gray-200 mb-1 flex items-center gap-2"><Workflow size={15} className="text-orange-400" /> Studying Workflow Balance</h2>
+        <p className="text-[10px] text-gray-600 mb-4">How your logged effort splits across the four phases — a healthy practice keeps Active Recall from being neglected.</p>
+        {data.phaseTotal === 0 ? (
+          <p className="text-sm text-gray-500">No workflow phases logged yet. Tap phases on a topic&apos;s panel or tag a phase when you Quick Log.</p>
+        ) : (
+          (() => {
+            const max = Math.max(1, ...PHASES.map(p => data.phaseTotals[p.n] ?? 0))
+            const lowest = [...PHASES].sort((a, b) => (data.phaseTotals[a.n] ?? 0) - (data.phaseTotals[b.n] ?? 0))[0]
+            const lowestPct = Math.round(((data.phaseTotals[lowest.n] ?? 0) / data.phaseTotal) * 100)
+            return (
+              <>
+                <div className="space-y-2.5">
+                  {PHASES.map(p => {
+                    const c = data.phaseTotals[p.n] ?? 0
+                    const pct = Math.round((c / data.phaseTotal) * 100)
+                    return (
+                      <div key={p.n} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 text-xs text-gray-400 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />{p.n}. {p.short}
+                        </span>
+                        <div className="flex-1 h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${(c / max) * 100}%`, background: p.color }} />
+                        </div>
+                        <span className="w-16 shrink-0 text-right text-xs text-gray-400 tabular-nums">{c}× · {pct}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-3 text-xs text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2">
+                  Your weakest phase is <span className="font-semibold" style={{ color: lowest.color }}>{lowest.label}</span> at just {lowestPct}% of logged effort.
+                  {lowest.n === 4 ? ' Active recall is what exams actually test — schedule more blank-sheet passes.' : ` ${lowest.hint}`}
+                </div>
+              </>
+            )
+          })()
+        )}
+      </div>
     </div>
   )
 }

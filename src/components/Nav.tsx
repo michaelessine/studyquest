@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings, FileText, Brain, ClipboardCheck, Briefcase, BookMarked, CalendarClock, ScrollText, Workflow } from 'lucide-react'
+import { LayoutDashboard, BookOpen, GitBranch, List, Calendar, MessageCircle, Zap, FlaskConical, GraduationCap, Route, BarChart3, Settings, FileText, Brain, ClipboardCheck, Briefcase, BookMarked, CalendarClock, ScrollText, Workflow, Bug } from 'lucide-react'
 
 const links = [
   { href: '/',               label: 'Dashboard',      icon: LayoutDashboard },
@@ -15,6 +15,7 @@ const links = [
   { href: '/real-exam',      label: 'Real Exam',      icon: ClipboardCheck },
   { href: '/planner',        label: 'Exam Planner',   icon: CalendarClock },
   { href: '/exercises',      label: 'Exercises',      icon: FileText },
+  { href: '/mistakes',       label: 'Mistake Log',    icon: Bug },
   { href: '/analytics',      label: 'Analytics',      icon: BarChart3 },
   { href: '/learning-ability', label: 'Learning Ability', icon: Brain },
   { href: '/career',         label: 'Career',         icon: Briefcase },
@@ -31,10 +32,12 @@ export default function Nav() {
   const path = usePathname()
   const [dueCount, setDueCount] = useState(0)
   const [deadlineCount, setDeadlineCount] = useState(0)
+  const [mistakeCount, setMistakeCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/reviews/due').then(r => r.json()).then(d => setDueCount(d.count ?? 0)).catch(() => {})
     fetch('/api/deadlines/due').then(r => r.json()).then(d => setDeadlineCount(d.count ?? 0)).catch(() => {})
+    fetch('/api/mistakes/count').then(r => r.json()).then(d => setMistakeCount(d.count ?? 0)).catch(() => {})
   }, [path]) // re-check when navigating
 
   return (
@@ -55,6 +58,7 @@ export default function Nav() {
           const active = path === href
           const reviewBadge = href === '/topics' && dueCount > 0
           const dlBadge = href === '/schedule' && deadlineCount > 0
+          const mistakeBadge = href === '/mistakes' && mistakeCount > 0
           return (
             <div key={href} className="relative shrink-0">
               <Link
@@ -73,7 +77,13 @@ export default function Nav() {
                     {deadlineCount > 99 ? '99+' : deadlineCount}
                   </span>
                 )}
-                {active && !reviewBadge && !dlBadge && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                {mistakeBadge && (
+                  <span title={`${mistakeCount} problem${mistakeCount === 1 ? '' : 's'} to redo`}
+                    className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-gray-600 text-white text-[10px] font-bold leading-none">
+                    {mistakeCount > 99 ? '99+' : mistakeCount}
+                  </span>
+                )}
+                {active && !reviewBadge && !dlBadge && !mistakeBadge && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400" />}
               </Link>
               {reviewBadge && (
                 <Link
