@@ -170,7 +170,7 @@ export default function SettingsPage() {
       <div className="card p-5 border-red-900/50">
         <h2 className="font-semibold text-red-400 mb-3 flex items-center gap-2"><Trash2 size={15} /> Danger Zone</h2>
         <p className="text-xs text-gray-500 mb-3">
-          Permanently delete all courses, topics, sessions, exams, quizzes, mastery history, and every other record. Your monthly cap setting is preserved. <strong className="text-red-400">This cannot be undone.</strong>
+          Resets all progress: sessions, exams, quizzes, mastery, phase logs, mistakes, and deadlines. Courses and skill nodes are kept but mastery is zeroed. Your monthly cap is preserved. <strong className="text-red-400">This cannot be undone.</strong>
         </p>
         <button onClick={resetAll} disabled={resetting}
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-900/50 hover:bg-red-800/60 border border-red-800 disabled:opacity-40 text-red-300 text-sm rounded-lg transition-colors">

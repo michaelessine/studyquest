@@ -1,0 +1,336 @@
+/**
+ * Restore skill nodes and dependencies only — does NOT delete anything else.
+ */
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+type TopicDef = { name: string; tier: number; category: string; prereqs: string[] }
+
+function resolvePrereq(ref: string): string {
+  return ref.replace(/\s+from\s+\S+$/i, '').trim()
+}
+
+const MATHEMATICS: TopicDef[] = [
+  { name: 'Differential calculus', tier: 0, category: 'Calculus & Analysis', prereqs: [] },
+  { name: 'Integral calculus', tier: 0, category: 'Calculus & Analysis', prereqs: [] },
+  { name: 'ODE', tier: 1, category: 'Calculus & Analysis', prereqs: ['Differential calculus', 'Integral calculus'] },
+  { name: 'Multivariable calculus', tier: 1, category: 'Calculus & Analysis', prereqs: ['Integral calculus'] },
+  { name: 'Real analysis', tier: 1, category: 'Calculus & Analysis', prereqs: ['Integral calculus', 'Linear algebra'] },
+  { name: 'Metric spaces', tier: 1, category: 'Calculus & Analysis', prereqs: ['Real analysis'] },
+  { name: 'PDE', tier: 2, category: 'Calculus & Analysis', prereqs: ['ODE', 'Multivariable calculus'] },
+  { name: 'Complex analysis', tier: 2, category: 'Calculus & Analysis', prereqs: ['Real analysis'] },
+  { name: 'Fourier analysis', tier: 2, category: 'Calculus & Analysis', prereqs: ['PDE', 'Real analysis'] },
+  { name: 'Measure and integral', tier: 2, category: 'Calculus & Analysis', prereqs: ['Real analysis'] },
+  { name: 'Asymptotics and perturbation theory', tier: 2, category: 'Calculus & Analysis', prereqs: ['Real analysis', 'ODE'] },
+  { name: 'Mathematical modelling', tier: 2, category: 'Calculus & Analysis', prereqs: ['ODE', 'Linear algebra'] },
+  { name: 'Functional analysis', tier: 3, category: 'Calculus & Analysis', prereqs: ['Measure and integral', 'Metric spaces'] },
+  { name: 'Hilbert spaces', tier: 3, category: 'Calculus & Analysis', prereqs: ['Functional analysis'] },
+  { name: 'Banach spaces', tier: 3, category: 'Calculus & Analysis', prereqs: ['Functional analysis'] },
+  { name: 'Harmonic analysis', tier: 3, category: 'Calculus & Analysis', prereqs: ['Fourier analysis', 'Measure and integral'] },
+  { name: 'Variational calculus', tier: 3, category: 'Calculus & Analysis', prereqs: ['ODE', 'Multivariable calculus'] },
+  { name: 'Spectral theory', tier: 4, category: 'Calculus & Analysis', prereqs: ['Hilbert spaces', 'Functional analysis'] },
+  { name: 'Linear algebra', tier: 0, category: 'Linear Algebra & Matrix Theory', prereqs: [] },
+  { name: 'Matrix theory', tier: 1, category: 'Linear Algebra & Matrix Theory', prereqs: ['Linear algebra'] },
+  { name: 'Numerical analysis', tier: 1, category: 'Linear Algebra & Matrix Theory', prereqs: ['Linear algebra', 'Integral calculus'] },
+  { name: 'Differential geometry', tier: 2, category: 'Linear Algebra & Matrix Theory', prereqs: ['Multivariable calculus', 'Linear algebra'] },
+  { name: 'Numerical matrix computations', tier: 2, category: 'Linear Algebra & Matrix Theory', prereqs: ['Numerical analysis', 'Matrix theory'] },
+  { name: 'Random matrix theory', tier: 4, category: 'Linear Algebra & Matrix Theory', prereqs: ['High-dimensional probability', 'Matrix theory'] },
+  { name: 'Probability theory', tier: 0, category: 'Probability & Statistics', prereqs: [] },
+  { name: 'Statistics', tier: 0, category: 'Probability & Statistics', prereqs: [] },
+  { name: 'Risk analysis', tier: 2, category: 'Probability & Statistics', prereqs: ['Probability theory', 'Statistics'] },
+  { name: 'Stochastic processes', tier: 2, category: 'Probability & Statistics', prereqs: ['Probability theory', 'Real analysis'] },
+  { name: 'Multivariate statistical analysis', tier: 2, category: 'Probability & Statistics', prereqs: ['Statistics', 'Linear algebra'] },
+  { name: 'Time series analysis', tier: 2, category: 'Probability & Statistics', prereqs: ['Statistics', 'Stochastic processes'] },
+  { name: 'High-dimensional probability', tier: 3, category: 'Probability & Statistics', prereqs: ['Measure and integral', 'Stochastic processes'] },
+  { name: 'High-dimensional statistics', tier: 3, category: 'Probability & Statistics', prereqs: ['Multivariate statistical analysis', 'High-dimensional probability'] },
+  { name: 'Brownian motion and stochastic analysis', tier: 3, category: 'Probability & Statistics', prereqs: ['Stochastic processes', 'Measure and integral'] },
+  { name: 'Computational methods in stochastics', tier: 3, category: 'Probability & Statistics', prereqs: ['Stochastic processes', 'Numerical analysis'] },
+  { name: 'Mathematical finance theory', tier: 4, category: 'Probability & Statistics', prereqs: ['Stochastic processes', 'Measure and integral'] },
+  { name: 'Discrete mathematics', tier: 0, category: 'Algebra & Number Theory', prereqs: [] },
+  { name: 'Number theory', tier: 0, category: 'Algebra & Number Theory', prereqs: [] },
+  { name: 'Combinatorics', tier: 0, category: 'Algebra & Number Theory', prereqs: [] },
+  { name: 'Abstract algebra', tier: 1, category: 'Algebra & Number Theory', prereqs: ['Discrete mathematics'] },
+  { name: 'Graph theory', tier: 1, category: 'Algebra & Number Theory', prereqs: ['Discrete mathematics'] },
+  { name: 'Cryptography', tier: 2, category: 'Algebra & Number Theory', prereqs: ['Number theory', 'Abstract algebra'] },
+  { name: 'Galois theory', tier: 3, category: 'Algebra & Number Theory', prereqs: ['Abstract algebra'] },
+  { name: 'Lie groups and Lie algebras', tier: 3, category: 'Algebra & Number Theory', prereqs: ['Abstract algebra', 'Differential geometry'] },
+  { name: 'Representation theory', tier: 4, category: 'Algebra & Number Theory', prereqs: ['Lie groups and Lie algebras', 'Abstract algebra'] },
+  { name: 'Algebraic geometry', tier: 4, category: 'Algebra & Number Theory', prereqs: ['Galois theory', 'Complex analysis'] },
+  { name: 'General topology', tier: 2, category: 'Topology & Geometry', prereqs: ['Metric spaces'] },
+  { name: 'Algebraic topology', tier: 3, category: 'Topology & Geometry', prereqs: ['General topology', 'Abstract algebra'] },
+  { name: 'Topological data analysis', tier: 4, category: 'Topology & Geometry', prereqs: ['Algebraic topology', 'Statistics'] },
+  { name: 'Linear optimization', tier: 1, category: 'Optimization', prereqs: ['Linear algebra'] },
+  { name: 'Nonlinear optimization', tier: 2, category: 'Optimization', prereqs: ['Linear optimization'] },
+  { name: 'Dynamic optimization', tier: 2, category: 'Optimization', prereqs: ['Linear optimization', 'ODE'] },
+  { name: 'Operations research', tier: 2, category: 'Optimization', prereqs: ['Linear optimization'] },
+  { name: 'Combinatorial optimization', tier: 3, category: 'Optimization', prereqs: ['Graph theory', 'Linear optimization'] },
+  { name: 'Computational inverse problems', tier: 3, category: 'Stochastic & Computational Methods', prereqs: ['Numerical analysis', 'PDE'] },
+  { name: 'Quantum probability', tier: 4, category: 'Stochastic & Computational Methods', prereqs: ['Hilbert spaces', 'Probability theory'] },
+  { name: 'Integral equations', tier: 2, category: 'Calculus & Analysis', prereqs: ['ODE', 'Real analysis'] },
+  { name: 'Control theory', tier: 2, category: 'Optimization', prereqs: ['ODE', 'Linear algebra'] },
+  { name: 'Projection theory', tier: 1, category: 'Linear Algebra & Matrix Theory', prereqs: ['Linear algebra'] },
+  { name: 'Category theory', tier: 3, category: 'Algebra & Number Theory', prereqs: ['Abstract algebra'] },
+]
+
+const COMPUTER_SCIENCE: TopicDef[] = [
+  { name: 'Basics of programming', tier: 0, category: 'Theory', prereqs: [] },
+  { name: 'Data structures and algorithms', tier: 1, category: 'Theory', prereqs: ['Basics of programming'] },
+  { name: 'Theory of computation', tier: 1, category: 'Theory', prereqs: [] },
+  { name: 'Computer architecture', tier: 1, category: 'Theory', prereqs: [] },
+  { name: 'Databases', tier: 1, category: 'Theory', prereqs: [] },
+  { name: 'Operating systems', tier: 2, category: 'Theory', prereqs: ['Computer architecture'] },
+  { name: 'Software Design and Modelling', tier: 2, category: 'Theory', prereqs: [] },
+  { name: 'Web Software Development', tier: 2, category: 'Theory', prereqs: ['Basics of programming'] },
+  { name: 'Software Engineering', tier: 2, category: 'Theory', prereqs: [] },
+  { name: 'Artificial Intelligence', tier: 2, category: 'Theory', prereqs: ['Data structures and algorithms'] },
+  { name: 'Information Security', tier: 2, category: 'Theory', prereqs: [] },
+  { name: 'Principles of Algorithmic Techniques', tier: 2, category: 'Theory', prereqs: ['Data structures and algorithms'] },
+  { name: 'Computer networks', tier: 2, category: 'Theory', prereqs: [] },
+  { name: 'Declarative Programming', tier: 2, category: 'Theory', prereqs: [] },
+  { name: 'Requirements Engineering', tier: 2, category: 'Theory', prereqs: ['Software Engineering'] },
+  { name: 'Testing', tier: 2, category: 'Theory', prereqs: ['Software Engineering'] },
+  { name: 'Cloud Software and Systems', tier: 3, category: 'Theory', prereqs: [] },
+  { name: 'Cybersecurity', tier: 3, category: 'Theory', prereqs: ['Information Security', 'Computer networks'] },
+  { name: 'Computational complexity', tier: 3, category: 'Theory', prereqs: ['Theory of computation', 'Principles of Algorithmic Techniques'] },
+  { name: 'Supervised Machine Learning', tier: 3, category: 'Theory', prereqs: ['Artificial Intelligence'] },
+  { name: 'Combinatorics of Computation', tier: 3, category: 'Theory', prereqs: ['Computational complexity'] },
+  { name: 'Scalable Systems and Data Management', tier: 3, category: 'Theory', prereqs: ['Databases', 'Cloud Software and Systems'] },
+  { name: 'Data Mining', tier: 3, category: 'Theory', prereqs: ['Databases'] },
+  { name: 'Security Engineering', tier: 3, category: 'Theory', prereqs: ['Cybersecurity', 'Software Engineering'] },
+  { name: 'Bayesian Data Analysis', tier: 3, category: 'Theory', prereqs: ['Supervised Machine Learning'] },
+  { name: 'Convex Optimization', tier: 3, category: 'Theory', prereqs: ['Principles of Algorithmic Techniques'] },
+  { name: 'Cross-Platform Development', tier: 3, category: 'Theory', prereqs: ['Web Software Development'] },
+  { name: 'Unsupervised learning', tier: 3, category: 'Theory', prereqs: ['Supervised Machine Learning'] },
+  { name: 'Compiler design', tier: 3, category: 'Theory', prereqs: ['Theory of computation', 'Basics of programming'] },
+  { name: 'Programming Parallel Computers', tier: 3, category: 'Theory', prereqs: ['Operating systems', 'Computer architecture'] },
+  { name: 'Deep Learning', tier: 4, category: 'Theory', prereqs: ['Supervised Machine Learning'] },
+  { name: 'Reinforcement Learning', tier: 4, category: 'Theory', prereqs: ['Supervised Machine Learning'] },
+  { name: 'Deep Generative Models', tier: 4, category: 'Theory', prereqs: ['Deep Learning'] },
+  { name: 'Probabilistic Machine Learning', tier: 4, category: 'Theory', prereqs: ['Bayesian Data Analysis'] },
+  { name: 'Gaussian Processes', tier: 4, category: 'Theory', prereqs: ['Bayesian Data Analysis'] },
+  { name: 'Computer Vision', tier: 4, category: 'Theory', prereqs: ['Deep Learning'] },
+  { name: 'Large Scale Data Analysis', tier: 4, category: 'Theory', prereqs: ['Scalable Systems and Data Management'] },
+  { name: 'Distributed Machine learning', tier: 4, category: 'Theory', prereqs: ['Deep Learning', 'Cloud Software and Systems'] },
+  { name: 'Federated Learning', tier: 4, category: 'Theory', prereqs: ['Deep Learning', 'Distributed Machine learning'] },
+  { name: 'LLMs', tier: 5, category: 'Theory', prereqs: ['Deep Learning', 'Probabilistic Machine Learning'] },
+  { name: 'Python', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'C', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'C++', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'C#', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'JavaScript', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'SQL', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'TypeScript', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Rust', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'R', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Power Query', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Pandas', tier: 1, category: 'Languages', prereqs: ['Python'] },
+  { name: 'NumPy', tier: 1, category: 'Languages', prereqs: ['Python'] },
+  { name: 'PyTorch', tier: 1, category: 'Languages', prereqs: ['Python'] },
+  { name: 'TensorFlow', tier: 1, category: 'Languages', prereqs: ['Python'] },
+  { name: 'scikit-learn', tier: 1, category: 'Languages', prereqs: ['Python'] },
+  { name: 'Git Control', tier: 0, category: 'Technologies', prereqs: [] },
+  { name: 'AWS', tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'Azure', tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'Node.js', tier: 1, category: 'Technologies', prereqs: ['JavaScript'] },
+  { name: 'React', tier: 1, category: 'Technologies', prereqs: ['JavaScript', 'Web Software Development'] },
+  { name: 'Next.js', tier: 1, category: 'Technologies', prereqs: ['React', 'TypeScript'] },
+  { name: 'GraphQL', tier: 1, category: 'Technologies', prereqs: ['Web Software Development'] },
+  { name: 'MySQL', tier: 1, category: 'Technologies', prereqs: ['Databases'] },
+  { name: 'PostgreSQL', tier: 1, category: 'Technologies', prereqs: ['Databases'] },
+  { name: 'BigQuery', tier: 2, category: 'Technologies', prereqs: ['Databases', 'Cloud Software and Systems'] },
+  { name: 'Qlik Sense', tier: 1, category: 'Technologies', prereqs: ['Databases'] },
+  { name: 'ETL/ELT', tier: 2, category: 'Technologies', prereqs: ['Databases'] },
+  { name: 'Fabric', tier: 2, category: 'Technologies', prereqs: ['Cloud Software and Systems', 'Databases'] },
+  { name: 'CI/CD', tier: 2, category: 'Technologies', prereqs: ['Software Engineering', 'Cloud Software and Systems'] },
+  { name: 'Computational geometry', tier: 3, category: 'Theory', prereqs: ['Data structures and algorithms', 'Principles of Algorithmic Techniques'] },
+  { name: 'Randomized algorithms', tier: 3, category: 'Theory', prereqs: ['Principles of Algorithmic Techniques', 'Probability theory'] },
+  { name: 'Logic and hard computational problems', tier: 3, category: 'Theory', prereqs: ['Theory of computation', 'Computational complexity'] },
+  { name: 'Quantum complexity theory', tier: 4, category: 'Theory', prereqs: ['Computational complexity'] },
+  { name: 'Applied cryptography', tier: 3, category: 'Theory', prereqs: ['Cryptography', 'Information Security'] },
+  { name: 'Hacking (offensive security)', tier: 4, category: 'Theory', prereqs: ['Cybersecurity', 'Information Security'] },
+  { name: 'Software testing', tier: 2, category: 'Theory', prereqs: ['Software Engineering'] },
+  { name: 'Principles and Techniques of Data Platforms', tier: 3, category: 'Theory', prereqs: ['Databases', 'Scalable Systems and Data Management'] },
+  { name: 'Multiagent learning', tier: 4, category: 'Theory', prereqs: ['Reinforcement Learning'] },
+  { name: 'AI agents', tier: 5, category: 'Theory', prereqs: ['Reinforcement Learning', 'LLMs'] },
+  { name: 'Java', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Haskell', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Bash/PowerShell', tier: 0, category: 'Languages', prereqs: [] },
+  { name: 'Linux', tier: 0, category: 'Technologies', prereqs: [] },
+  { name: 'Docker', tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'Kubernetes', tier: 2, category: 'Technologies', prereqs: ['Docker', 'Cloud Software and Systems'] },
+  { name: 'Google Cloud', tier: 1, category: 'Technologies', prereqs: ['Cloud Software and Systems'] },
+  { name: 'FullStack', tier: 2, category: 'Technologies', prereqs: ['React', 'Node.js'] },
+]
+
+const FINANCE: TopicDef[] = [
+  { name: 'Fundamentals of Corporate Finance', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Fundamentals of Investments', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Fundamentals of Financial Markets and Institutions', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Personal Finance', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Mergers and Acquisitions', tier: 2, category: 'Corporate Finance', prereqs: ['Fundamentals of Corporate Finance'] },
+  { name: 'Advanced Corporate Finance', tier: 2, category: 'Corporate Finance', prereqs: ['Fundamentals of Corporate Finance'] },
+  { name: 'Entrepreneurial Finance', tier: 2, category: 'Corporate Finance', prereqs: ['Fundamentals of Corporate Finance'] },
+  { name: 'Corporate Governance', tier: 2, category: 'Corporate Finance', prereqs: ['Advanced Corporate Finance'] },
+  { name: 'Real Estate Finance', tier: 2, category: 'Corporate Finance', prereqs: ['Fundamentals of Corporate Finance'] },
+  { name: 'Startup Finance', tier: 2, category: 'Corporate Finance', prereqs: ['Entrepreneurial Finance'] },
+  { name: 'Financial Modeling in Strategy and Venturing', tier: 3, category: 'Corporate Finance', prereqs: ['Advanced Corporate Finance'] },
+  { name: 'Derivatives and Fixed Income', tier: 1, category: 'Investments', prereqs: ['Fundamentals of Investments'] },
+  { name: 'Alternative Investments', tier: 1, category: 'Investments', prereqs: ['Fundamentals of Investments'] },
+  { name: 'Advanced Investments', tier: 2, category: 'Investments', prereqs: ['Derivatives and Fixed Income'] },
+  { name: 'Portfolio Management', tier: 2, category: 'Investments', prereqs: ['Fundamentals of Investments'] },
+  { name: 'Theoretical Asset Pricing', tier: 3, category: 'Investments', prereqs: ['Advanced Investments', 'Portfolio Management'] },
+  { name: 'Private Equity and Venture Capital', tier: 2, category: 'Investments', prereqs: ['Alternative Investments', 'Entrepreneurial Finance'] },
+  { name: 'Fundamentals of Financial Risk Management', tier: 1, category: 'Risk Management', prereqs: ['Fundamentals of Investments'] },
+  { name: 'Advanced Financial Risk Management', tier: 2, category: 'Risk Management', prereqs: ['Fundamentals of Financial Risk Management'] },
+  { name: 'Quantitative Risk Management', tier: 3, category: 'Risk Management', prereqs: ['Advanced Financial Risk Management'] },
+  { name: 'Machine Learning in Financial Risk Management', tier: 4, category: 'Risk Management', prereqs: ['Quantitative Risk Management', 'Supervised Machine Learning'] },
+  { name: 'Options Pricing Theory', tier: 3, category: 'Quantitative Finance', prereqs: ['Derivatives and Fixed Income', 'Stochastic processes'] },
+  { name: 'Algorithmic Trading', tier: 3, category: 'Quantitative Finance', prereqs: ['Financial Markets', 'Supervised Machine Learning'] },
+  { name: 'High-Frequency Trading', tier: 4, category: 'Quantitative Finance', prereqs: ['Algorithmic Trading'] },
+  { name: 'Systematic Investment Strategies', tier: 4, category: 'Quantitative Finance', prereqs: ['Algorithmic Trading', 'Portfolio Management'] },
+  { name: 'Financial Markets', tier: 1, category: 'Specializations', prereqs: ['Fundamentals of Financial Markets and Institutions'] },
+  { name: 'Advances in Financial Technology', tier: 2, category: 'Specializations', prereqs: ['Fundamentals of Financial Markets and Institutions'] },
+  { name: 'Fintech', tier: 2, category: 'Specializations', prereqs: ['Advances in Financial Technology'] },
+]
+
+const ECONOMICS: TopicDef[] = [
+  { name: 'Economics of Global Challenges', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Basics of microeconomics', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Basics of macroeconomics', tier: 0, category: 'Foundations', prereqs: [] },
+  { name: 'Advanced microeconomics', tier: 1, category: 'Microeconomics', prereqs: ['Basics of microeconomics'] },
+  { name: 'Personnel Economics', tier: 2, category: 'Microeconomics', prereqs: ['Advanced microeconomics'] },
+  { name: 'Competition and Market Strategy', tier: 2, category: 'Microeconomics', prereqs: ['Advanced microeconomics'] },
+  { name: 'Economics of Strategy', tier: 2, category: 'Microeconomics', prereqs: ['Game Theory'] },
+  { name: 'Economics of Organisation and Information', tier: 2, category: 'Microeconomics', prereqs: ['Advanced microeconomics'] },
+  { name: 'Microeconomics Pricing', tier: 2, category: 'Microeconomics', prereqs: ['Advanced microeconomics'] },
+  { name: 'Real Estate Economics', tier: 3, category: 'Microeconomics', prereqs: ['Advanced microeconomics'] },
+  { name: 'Industrial organization', tier: 3, category: 'Microeconomics', prereqs: ['Competition and Market Strategy'] },
+  { name: 'Information economics', tier: 3, category: 'Microeconomics', prereqs: ['Economics of Organisation and Information'] },
+  { name: 'General equilibrium theory', tier: 3, category: 'Microeconomics', prereqs: ['Advanced microeconomics', 'Advanced macroeconomics'] },
+  { name: 'Advanced macroeconomics', tier: 1, category: 'Macroeconomics', prereqs: ['Basics of macroeconomics'] },
+  { name: 'Money and Banking Theory', tier: 2, category: 'Macroeconomics', prereqs: ['Basics of macroeconomics'] },
+  { name: 'International trade', tier: 2, category: 'Macroeconomics', prereqs: ['Basics of macroeconomics', 'Basics of microeconomics'] },
+  { name: 'Macroeconomics Policy', tier: 2, category: 'Macroeconomics', prereqs: ['Advanced macroeconomics'] },
+  { name: 'Economic growth theory', tier: 3, category: 'Macroeconomics', prereqs: ['Advanced macroeconomics'] },
+  { name: 'Econometrics', tier: 1, category: 'Quantitative Methods', prereqs: ['Basics of microeconomics', 'Statistics'] },
+  { name: 'Game Theory', tier: 1, category: 'Quantitative Methods', prereqs: ['Basics of microeconomics'] },
+  { name: 'Algorithmic game theory', tier: 2, category: 'Quantitative Methods', prereqs: ['Game Theory'] },
+  { name: 'Computational economics', tier: 3, category: 'Quantitative Methods', prereqs: ['Algorithmic game theory', 'Econometrics'] },
+  { name: 'Matching theory', tier: 3, category: 'Specializations', prereqs: ['Game Theory'] },
+  { name: 'Market design', tier: 3, category: 'Specializations', prereqs: ['Matching theory', 'Game Theory'] },
+]
+
+const QUANTUM_MECHANICS: TopicDef[] = [
+  { name: 'Quantum mechanics basics', tier: 0, category: 'Fundamentals', prereqs: [] },
+  { name: 'Special relativity', tier: 0, category: 'Fundamentals', prereqs: [] },
+  { name: 'Advanced quantum mechanics', tier: 1, category: 'Fundamentals', prereqs: ['Quantum mechanics basics'] },
+  { name: 'Semiconductor physics', tier: 1, category: 'Quantum Physics', prereqs: ['Quantum mechanics basics'] },
+  { name: 'General relativity', tier: 2, category: 'Quantum Physics', prereqs: ['Special relativity', 'Advanced quantum mechanics'] },
+  { name: 'Quantum Information', tier: 2, category: 'Quantum Computing', prereqs: ['Advanced quantum mechanics'] },
+  { name: 'Quantum Circuits', tier: 2, category: 'Quantum Computing', prereqs: ['Quantum Information'] },
+  { name: 'Quantum Computing', tier: 3, category: 'Quantum Computing', prereqs: ['Quantum Circuits', 'Quantum Information'] },
+  { name: 'Quantum error correction', tier: 3, category: 'Quantum Computing', prereqs: ['Quantum Computing'] },
+  { name: 'Programming quantum computers', tier: 3, category: 'Quantum Computing', prereqs: ['Quantum Computing'] },
+  { name: 'Quantum Machine Learning', tier: 4, category: 'Quantum Computing', prereqs: ['Quantum Computing'] },
+  { name: 'Superconductivity', tier: 2, category: 'Quantum Materials', prereqs: ['Semiconductor physics', 'Advanced quantum mechanics'] },
+  { name: 'Quantum Materials', tier: 3, category: 'Quantum Materials', prereqs: ['Superconductivity'] },
+]
+
+const OTHERS: TopicDef[] = [
+  { name: 'Nuclear structure', tier: 0, category: 'Physics', prereqs: ['Quantum mechanics basics'] },
+  { name: 'Radioactivity and decay', tier: 0, category: 'Physics', prereqs: [] },
+  { name: 'Nuclear reactions', tier: 1, category: 'Physics', prereqs: ['Nuclear structure'] },
+  { name: 'Fission and fusion energy', tier: 2, category: 'Physics', prereqs: ['Nuclear reactions'] },
+  { name: 'Exoplanet detection methods', tier: 0, category: 'Physics', prereqs: [] },
+  { name: 'Cosmic microwave background', tier: 1, category: 'Physics', prereqs: [] },
+  { name: 'Black holes and event horizons', tier: 2, category: 'Physics', prereqs: ['General relativity'] },
+  { name: 'Gravitational lensing', tier: 2, category: 'Physics', prereqs: ['General relativity'] },
+  { name: 'Big bang theory', tier: 2, category: 'Physics', prereqs: ['Cosmic microwave background'] },
+  { name: 'Cosmic inflation', tier: 3, category: 'Physics', prereqs: ['Big bang theory'] },
+  { name: 'Dark matter and dark energy', tier: 3, category: 'Physics', prereqs: ['Big bang theory', 'Gravitational lensing'] },
+  { name: 'Brownian motion (stat phys)', tier: 1, category: 'Physics', prereqs: ['Probability theory'] },
+  { name: 'Monte Carlo simulations', tier: 2, category: 'Physics', prereqs: ['Probability theory'] },
+  { name: 'Startup fundamentals', tier: 0, category: 'Entrepreneurship', prereqs: [] },
+  { name: 'Business model canvas and lean startup', tier: 0, category: 'Entrepreneurship', prereqs: ['Startup fundamentals'] },
+  { name: 'Market research and validation', tier: 0, category: 'Entrepreneurship', prereqs: ['Startup fundamentals'] },
+  { name: 'Customer development methodology', tier: 0, category: 'Entrepreneurship', prereqs: ['Market research and validation'] },
+  { name: 'Product-market fit', tier: 1, category: 'Entrepreneurship', prereqs: ['Customer development methodology', 'Business model canvas and lean startup'] },
+  { name: 'Growth hacking strategies', tier: 1, category: 'Entrepreneurship', prereqs: ['Product-market fit'] },
+  { name: 'Fundraising (angel, VC, crowdfunding)', tier: 1, category: 'Entrepreneurship', prereqs: ['Business model canvas and lean startup'] },
+  { name: 'Pitch deck design and investor relations', tier: 1, category: 'Entrepreneurship', prereqs: ['Fundraising (angel, VC, crowdfunding)'] },
+  { name: 'Scaling and operations', tier: 2, category: 'Entrepreneurship', prereqs: ['Product-market fit'] },
+  { name: 'Team building and hiring', tier: 2, category: 'Entrepreneurship', prereqs: ['Scaling and operations'] },
+  { name: 'Corporate innovation and intrapreneurship', tier: 2, category: 'Entrepreneurship', prereqs: ['Growth hacking strategies'] },
+  { name: 'Organizational culture', tier: 3, category: 'Entrepreneurship', prereqs: ['Team building and hiring'] },
+  { name: 'Exit strategies (acquisition, IPO)', tier: 3, category: 'Entrepreneurship', prereqs: ['Scaling and operations', 'Fundraising (angel, VC, crowdfunding)'] },
+  { name: 'Failure analysis and lessons learned', tier: 3, category: 'Entrepreneurship', prereqs: ['Scaling and operations'] },
+  { name: 'Exploratory data analysis (EDA)', tier: 0, category: 'Business Analytics', prereqs: [] },
+  { name: 'Business metrics and KPIs', tier: 0, category: 'Business Analytics', prereqs: [] },
+  { name: 'Funnel analysis and conversion optimization', tier: 1, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
+  { name: 'Customer lifetime value (CLV) modeling', tier: 1, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
+  { name: 'A/B testing design and analysis', tier: 2, category: 'Business Analytics', prereqs: ['Business metrics and KPIs'] },
+  { name: 'Dashboarding and visualization for business', tier: 3, category: 'Business Analytics', prereqs: ['Exploratory data analysis (EDA)'] },
+  { name: 'Storytelling with data', tier: 3, category: 'Business Analytics', prereqs: ['Dashboarding and visualization for business'] },
+  { name: 'Strategic Management basics', tier: 0, category: 'Management', prereqs: [] },
+  { name: 'Product management basics', tier: 0, category: 'Management', prereqs: [] },
+  { name: 'Operations management basics', tier: 0, category: 'Management', prereqs: [] },
+  { name: 'Advanced Operations Management', tier: 1, category: 'Management', prereqs: ['Operations management basics'] },
+  { name: 'Advanced product Management', tier: 1, category: 'Management', prereqs: ['Product management basics'] },
+  { name: 'Advanced strategic Management', tier: 1, category: 'Management', prereqs: ['Strategic Management basics'] },
+  { name: 'Designing Adaptive and Creative Organisations', tier: 2, category: 'Management', prereqs: ['Advanced strategic Management'] },
+  { name: 'Strategy Process', tier: 2, category: 'Management', prereqs: ['Advanced strategic Management'] },
+  { name: 'Product Leadership and Operating Models', tier: 2, category: 'Management', prereqs: ['Advanced product Management'] },
+  { name: 'Innovation in Operations', tier: 2, category: 'Management', prereqs: ['Advanced Operations Management'] },
+  { name: 'Leadership and Technology', tier: 2, category: 'Management', prereqs: ['Strategic Management basics', 'Basics of programming'] },
+  { name: 'Operating Models', tier: 2, category: 'Management', prereqs: ['Advanced Operations Management'] },
+]
+
+const ALL_SUBJECTS: [string, TopicDef[]][] = [
+  ['Mathematics', MATHEMATICS],
+  ['ComputerScience', COMPUTER_SCIENCE],
+  ['Finance', FINANCE],
+  ['Economics', ECONOMICS],
+  ['QuantumMechanics', QUANTUM_MECHANICS],
+  ['Others', OTHERS],
+]
+
+async function main() {
+  console.log('Restoring skill nodes...')
+  const globalNameToId = new Map<string, string>()
+
+  for (const [subject, topics] of ALL_SUBJECTS) {
+    for (const t of topics) {
+      const node = await prisma.skillNode.create({
+        data: {
+          name: t.name, subject,
+          category: t.category, tier: t.tier,
+          status: t.tier === 0 ? 'unlocked' : 'locked',
+          masteryLevel: 0,
+          xpValue: (t.tier + 1) * 100,
+        },
+      })
+      globalNameToId.set(t.name, node.id)
+    }
+    console.log(`  ✓ ${subject}: ${topics.length} nodes`)
+  }
+
+  let depCount = 0
+  for (const [, topics] of ALL_SUBJECTS) {
+    for (const t of topics) {
+      const depId = globalNameToId.get(t.name)!
+      for (const prereqRef of t.prereqs) {
+        const prereqName = resolvePrereq(prereqRef)
+        const prereqId = globalNameToId.get(prereqName)
+        if (!prereqId) { console.warn(`  ⚠ Missing prereq "${prereqRef}" for "${t.name}"`); continue }
+        await prisma.skillDependency.create({ data: { prerequisiteId: prereqId, dependentId: depId } })
+        depCount++
+      }
+    }
+  }
+  console.log(`  ✓ ${depCount} dependencies`)
+  console.log('Done!')
+  await prisma.$disconnect()
+}
+
+main().catch(e => { console.error(e); prisma.$disconnect(); process.exit(1) })

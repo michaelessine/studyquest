@@ -22,10 +22,18 @@ export async function POST() {
   await prisma.socraticSession.deleteMany({})
   await prisma.researchPaper.deleteMany({})
   await prisma.textbookChapter.deleteMany({})
-  await prisma.skillDependency.deleteMany({})
-  await prisma.skillNode.deleteMany({})
-  await prisma.topic.deleteMany({})
-  await prisma.course.deleteMany({})
+  // Skill nodes: reset progress only, keep nodes and dependencies
+  await prisma.skillNode.updateMany({
+    data: { masteryLevel: 0, status: 'locked', nextReviewAt: null, reviewIntervalDays: 1, masteryUpdatedAt: null },
+  })
+  // Unlock tier-0 nodes (no prerequisites)
+  const allDeps = await prisma.skillDependency.findMany({ select: { dependentId: true } })
+  const hasDep = new Set(allDeps.map(d => d.dependentId))
+  const allNodes = await prisma.skillNode.findMany({ select: { id: true } })
+  const tier0Ids = allNodes.filter(n => !hasDep.has(n.id)).map(n => n.id)
+  if (tier0Ids.length > 0) {
+    await prisma.skillNode.updateMany({ where: { id: { in: tier0Ids } }, data: { status: 'unlocked' } })
+  }
   await prisma.achievement.deleteMany({})
 
   await prisma.learningAbility.deleteMany({})

@@ -1,14 +1,13 @@
 'use client'
-import { useState } from 'react'
 
 interface Props {
-  value: number            // 0–5 in 0.5 increments
+  value: number
   onChange?: (v: number) => void
   readonly?: boolean
   size?: 'sm' | 'md' | 'lg'
 }
 
-const SIZE = { sm: 14, md: 18, lg: 24 }
+const SIZE = { sm: 13, md: 17, lg: 22 }
 
 function masteryLabel(ml: number): string {
   if (ml === 0)   return 'Not started'
@@ -50,7 +49,6 @@ function StarIcon({ fill, px, color, id }: { fill: FillType; px: number; color: 
       </svg>
     )
   }
-  // Half star — clip left half only
   return (
     <svg width={px} height={px} viewBox="0 0 24 24" className={color}>
       <defs>
@@ -62,57 +60,49 @@ function StarIcon({ fill, px, color, id }: { fill: FillType; px: number; color: 
   )
 }
 
+function getFill(starIndex: number, value: number): FillType {
+  if (value >= starIndex)       return 'full'
+  if (value >= starIndex - 0.5) return 'half'
+  return 'empty'
+}
+
 export default function StarRating({ value, onChange, readonly = false, size = 'md' }: Props) {
-  const [hovered, setHovered] = useState<number>(0)
-  const px      = SIZE[size]
-  const display = hovered > 0 ? hovered : value
+  const px = SIZE[size]
+  const color = masteryColor(value)
 
-  function getFill(starIndex: number): FillType {
-    if (display >= starIndex)          return 'full'
-    if (display >= starIndex - 0.5)    return 'half'
-    return 'empty'
+  function step(delta: number) {
+    if (!onChange) return
+    const next = Math.round((value + delta) * 4) / 4
+    onChange(Math.max(0, Math.min(5, next)))
   }
 
-  function handleMouseMove(e: React.MouseEvent<HTMLButtonElement>, starIndex: number) {
-    if (readonly) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const isLeft = e.clientX - rect.left < rect.width / 2
-    setHovered(isLeft ? starIndex - 0.5 : starIndex)
-  }
+  const stars = (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => (
+        <StarIcon key={i} fill={getFill(i, value)} px={px} color={color} id={String(i)} />
+      ))}
+    </div>
+  )
 
-  function handleClick(e: React.MouseEvent<HTMLButtonElement>, starIndex: number) {
-    if (readonly || !onChange) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const isLeft = e.clientX - rect.left < rect.width / 2
-    const clicked = isLeft ? starIndex - 0.5 : starIndex
-    // Clicking the current value resets to 0
-    onChange(clicked === value ? 0 : clicked)
-  }
+  if (readonly) return stars
 
-  const color = masteryColor(display)
+  const btnCls = `w-8 h-7 rounded border text-xs font-bold transition-colors select-none
+    bg-gray-800 border-gray-700 text-gray-300 hover:border-orange-600 hover:text-orange-300
+    disabled:opacity-30 disabled:cursor-not-allowed`
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map(i => (
-          <button
-            key={i}
-            disabled={readonly}
-            onMouseMove={e => handleMouseMove(e, i)}
-            onMouseLeave={() => setHovered(0)}
-            onClick={e => handleClick(e, i)}
-            className={`transition-transform select-none ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}`}
-            aria-label={`Rate ${i} stars`}
-          >
-            <StarIcon fill={getFill(i)} px={px} color={color} id={`${i}`} />
-          </button>
-        ))}
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        {stars}
+        <span className={`text-xs font-semibold tabular-nums ${color}`}>{value}★</span>
       </div>
-      {!readonly && display > 0 && (
-        <span className={`text-[10px] font-medium ${color}`}>
-          {masteryLabel(display)} ({display}★)
-        </span>
-      )}
+      <div className="flex items-center gap-1.5">
+        <button onClick={() => step(-0.25)} disabled={value <= 0} className={btnCls}>−¼</button>
+        <button onClick={() => step( 0.25)} disabled={value >= 5} className={btnCls}>+¼</button>
+        {value > 0 && (
+          <span className={`text-[10px] font-medium ${color}`}>{masteryLabel(value)}</span>
+        )}
+      </div>
     </div>
   )
 }
