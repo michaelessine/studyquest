@@ -1,7 +1,7 @@
 import prisma from './prisma'
 
 // PART 3: a topic unlocks when ALL prerequisites reach this mastery level.
-export const UNLOCK_THRESHOLD = 3.0
+export const UNLOCK_THRESHOLD = 2.0
 
 /**
  * Full fixed-point cascade unlock.
