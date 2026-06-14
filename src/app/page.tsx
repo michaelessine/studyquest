@@ -24,10 +24,11 @@ export default async function DashboardPage() {
       where: { completed: false }, orderBy: { dueDate: 'asc' }, take: 6,
       include: { course: { select: { name: true, subject: true } } },
     }),
-    prisma.topic.findMany({
-      where: { status: 'pending', course: { status: 'active' } },
-      include: { course: { select: { name: true, code: true } } },
-      orderBy: [{ week: 'asc' }], take: 6,
+    prisma.skillNode.findMany({
+      where: { status: 'in_progress' },
+      orderBy: [{ masteryUpdatedAt: 'desc' }],
+      take: 9,
+      select: { id: true, name: true, subject: true, masteryLevel: true },
     }),
     prisma.quizResult.findMany({
       where: { quiz: { quizType: 'exam' } },
@@ -292,29 +293,33 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Active course topics */}
+      {/* Active skill topics */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-200 flex items-center gap-2"><BookOpen size={15} className="text-orange-400" />Active Topics</h2>
-          <Link href="/courses" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">All courses <ChevronRight size={12} /></Link>
+          <Link href="/topics" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">All topics <ChevronRight size={12} /></Link>
         </div>
         {activeTopics.length === 0 ? (
           <div className="py-8 flex flex-col items-center gap-3">
             <List size={32} className="text-gray-700" />
-            <p className="text-sm text-gray-500">No pending course topics</p>
+            <p className="text-sm text-gray-500">No topics in progress yet</p>
             <Link href="/topics" className="px-4 py-1.5 text-xs border border-orange-700/60 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors">Browse Topics</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {activeTopics.map(topic => (
-              <div key={topic.id} className="bg-gray-800/60 border border-gray-700/60 rounded-lg p-3 flex items-start gap-3">
-                <CheckCircle2 size={16} className="text-gray-600 mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-gray-200 truncate">{topic.title}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{topic.course.code ?? topic.course.name} · Wk {topic.week}</div>
+            {activeTopics.map(topic => {
+              const stars = '★'.repeat(Math.floor(topic.masteryLevel)) + (topic.masteryLevel % 1 >= 0.25 ? '⯨' : '') + '☆'.repeat(5 - Math.ceil(topic.masteryLevel))
+              return (
+                <div key={topic.id} className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-3 flex items-start gap-3">
+                  <CheckCircle2 size={16} className="text-blue-400 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-200 truncate">{topic.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{SUBJECT_LABEL[topic.subject as keyof typeof SUBJECT_LABEL] ?? topic.subject}</div>
+                    <div className="text-[10px] text-blue-400 mt-0.5">{stars}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

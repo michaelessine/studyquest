@@ -88,7 +88,11 @@ function cardStyle(status: string, ml: number) {
   return 'bg-gray-900/50 border-gray-800 opacity-60'
 }
 
-function MoveTopicButton({ node, onMoved }: { node: TopicNode; onMoved: (id: string, subject: string) => void }) {
+function MoveTopicButton({ node, allNodes, onMoved }: {
+  node: TopicNode
+  allNodes: TopicNode[]
+  onMoved: (id: string, subject: string, category: string) => void
+}) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -102,17 +106,28 @@ function MoveTopicButton({ node, onMoved }: { node: TopicNode; onMoved: (id: str
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
-  async function move(subject: string) {
-    if (subject === node.subject) { setOpen(false); return }
+  // Categories within the current subject (from all nodes)
+  const localCategories = Array.from(new Set(
+    allNodes.filter(n => n.subject === node.subject).map(n => n.category)
+  )).sort()
+
+  async function move(subject: string, category: string) {
+    if (subject === node.subject && category === node.category) { setOpen(false); return }
     setBusy(true); setOpen(false)
     try {
+      const body: Record<string, string> = { type: 'skillNode' }
+      if (subject !== node.subject) body.subject = subject
+      if (category !== node.category) body.category = category
       const res = await fetch(`/api/topics/${node.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'skillNode', subject }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error()
-      showToast('info', `Moved to ${SUBJECT_LABEL[subject as Subject] ?? subject}`)
-      onMoved(node.id, subject)
+      const label = subject !== node.subject
+        ? `${SUBJECT_LABEL[subject as Subject] ?? subject} › ${category}`
+        : category
+      showToast('info', `Moved to ${label}`)
+      onMoved(node.id, subject, category)
     } catch {
       showToast('info', 'Failed to move topic')
     } finally { setBusy(false) }
@@ -121,19 +136,32 @@ function MoveTopicButton({ node, onMoved }: { node: TopicNode; onMoved: (id: str
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)} disabled={busy}
-        title="Move to another subject"
+        title="Move to another category or subject"
         className="p-1 text-gray-600 hover:text-blue-400 transition-colors">
         {busy ? <Loader2 size={12} className="animate-spin" /> : <FolderInput size={12} />}
       </button>
       {open && (
-        <div className="absolute right-0 top-6 w-44 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1 z-20">
-          {SUBJECTS.map(s => (
-            <button key={s} onClick={() => move(s)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors">
-              <span className={s === node.subject ? 'text-orange-300 font-medium' : 'text-gray-300'}>
-                {SUBJECT_LABEL[s]}
-              </span>
-              {s === node.subject && <Check size={10} className="text-orange-400 shrink-0" />}
+        <div className="absolute right-0 top-6 w-52 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1 z-20 max-h-72 overflow-y-auto">
+          {/* Categories within current subject */}
+          <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-gray-600">
+            {SUBJECT_LABEL[node.subject as Subject]} — category
+          </div>
+          {localCategories.map(cat => (
+            <button key={cat} onClick={() => move(node.subject, cat)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-800 transition-colors">
+              <span className={cat === node.category ? 'text-orange-300 font-medium' : 'text-gray-300'}>{cat}</span>
+              {cat === node.category && <Check size={10} className="text-orange-400 shrink-0" />}
+            </button>
+          ))}
+
+          {/* Other subjects */}
+          <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-gray-600 border-t border-gray-800 mt-1">
+            Move to subject
+          </div>
+          {SUBJECTS.filter(s => s !== node.subject).map(s => (
+            <button key={s} onClick={() => move(s, 'Custom')}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors">
+              {SUBJECT_LABEL[s]}
             </button>
           ))}
         </div>
@@ -236,7 +264,7 @@ function ConnectionsPanel({ node, allNodes, onChanged }: {
 function TopicCard({ node, saving, onRate, onMoved, onDelete, allNodes, onRefresh }: {
   node: TopicNode; saving: string | null
   onRate: (id: string, ml: number) => void
-  onMoved: (id: string, subject: string) => void
+  onMoved: (id: string, subject: string, category: string) => void
   onDelete: (id: string, name: string) => void
   allNodes: TopicNode[]
   onRefresh: () => void
@@ -265,7 +293,7 @@ function TopicCard({ node, saving, onRate, onMoved, onDelete, allNodes, onRefres
           </div>
           <div className="shrink-0 flex items-center gap-0.5">
             <span className="text-[10px] text-gray-600 mr-1">Tier {node.tier}</span>
-            <MoveTopicButton node={node} onMoved={onMoved} />
+            <MoveTopicButton node={node} allNodes={allNodes} onMoved={onMoved} />
             <button onClick={() => onDelete(node.id, node.name)}
               title="Delete topic"
               className="p-1 text-gray-600 hover:text-red-400 transition-colors">
@@ -325,6 +353,7 @@ export default function TopicsClient({ nodes }: Props) {
   const [recalculating, setRecalculating] = useState(false)
   const [localMastery, setLocalMastery] = useState<Map<string, number>>(new Map())
   const [localSubject, setLocalSubject] = useState<Map<string, string>>(new Map())
+  const [localCategory, setLocalCategory] = useState<Map<string, string>>(new Map())
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
@@ -408,13 +437,18 @@ export default function TopicsClient({ nodes }: Props) {
     } finally { setCreating(false) }
   }
 
-  const onMoved = useCallback((id: string, newSubject: string) => {
+  const onMoved = useCallback((id: string, newSubject: string, newCategory: string) => {
     setLocalSubject(prev => new Map(prev).set(id, newSubject))
+    setLocalCategory(prev => new Map(prev).set(id, newCategory))
     router.refresh()
   }, [router])
 
   const subjectNodes = nodes
-    .map(n => localSubject.has(n.id) ? { ...n, subject: localSubject.get(n.id)! } : n)
+    .map(n => ({
+      ...n,
+      subject: localSubject.get(n.id) ?? n.subject,
+      category: localCategory.get(n.id) ?? n.category,
+    }))
     .filter(n => n.subject === subject)
 
   // Group by category, then show tier within each category section

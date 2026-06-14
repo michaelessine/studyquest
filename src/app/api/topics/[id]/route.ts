@@ -28,9 +28,12 @@ export async function PATCH(
     return NextResponse.json({ node, unlockedNames: unlocked.map(u => u.name) })
   }
 
-  // ── Subject move ──────────────────────────────────────────────────────────
-  if (body.type === 'skillNode' && body.subject) {
-    const node = await prisma.skillNode.update({ where: { id: params.id }, data: { subject: body.subject } })
+  // ── Subject / category move ───────────────────────────────────────────────
+  if (body.type === 'skillNode' && (body.subject || body.category)) {
+    const data: Record<string, string> = {}
+    if (body.subject) data.subject = body.subject
+    if (body.category) data.category = body.category
+    const node = await prisma.skillNode.update({ where: { id: params.id }, data })
     return NextResponse.json({ node })
   }
 
