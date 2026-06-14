@@ -8,7 +8,7 @@ export async function GET() {
   const now = new Date()
   const thirtyAgo = new Date(now.getTime() - 30 * 86_400_000)
   const tenWeeksAgo = new Date(now.getTime() - 10 * 7 * 86_400_000)
-  const [studySessions, skillNodes, masteryEvents, phaseGroups, phaseLogsRecent, phaseLogsAll, masteryEventsAll] = await Promise.all([
+  const [studySessions, skillNodes, masteryEvents, phaseGroups, phaseLogsRecent, phaseLogsAll, masteryEventsAll, goalSetting] = await Promise.all([
     prisma.studySession.findMany({ select: { startTime: true, durationMins: true, skillNodeId: true } }),
     prisma.skillNode.findMany({ select: { id: true, subject: true, masteryLevel: true } }),
     prisma.masteryEvent.findMany({ where: { timestamp: { gte: thirtyAgo }, masteryGain: { gt: 0 } }, select: { masteryGain: true, timestamp: true } }),
@@ -16,6 +16,7 @@ export async function GET() {
     prisma.phaseLog.findMany({ where: { timestamp: { gte: tenWeeksAgo } }, select: { phase: true, timestamp: true } }),
     prisma.phaseLog.findMany({ select: { skillNodeId: true, phase: true } }),
     prisma.masteryEvent.findMany({ where: { masteryGain: { gt: 0 } }, select: { skillNodeId: true, masteryGain: true, timestamp: true } }),
+    prisma.appSetting.findUnique({ where: { id: 'singleton' } }),
   ])
 
   type Entry = { date: string; mins: number }
@@ -72,8 +73,7 @@ export async function GET() {
   }
   const perSubject = Array.from(bySubjectMins.entries()).map(([subject, mins]) => ({ subject, hours: Math.round((mins / 60) * 10) / 10 }))
 
-  // Semester goal pace (assume 100h goal, ~16 week semester)
-  const semesterGoalHours = 100
+  const semesterGoalHours = goalSetting?.semesterGoalHours ?? 100
   const onPace = totalHours
   const projection = Math.round(onPace * 1.5 * 10) / 10 // naive projection
 

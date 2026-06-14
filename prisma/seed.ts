@@ -45,10 +45,12 @@ const MATHEMATICS: TopicDef[] = [
   { name: 'Numerical matrix computations',          tier: 2, category: 'Linear Algebra & Matrix Theory', prereqs: ['Numerical analysis', 'Matrix theory'] },
   { name: 'Random matrix theory',                   tier: 4, category: 'Linear Algebra & Matrix Theory', prereqs: ['High-dimensional probability', 'Matrix theory'] },
   // Probability & Statistics
-  { name: 'Probability theory',                     tier: 0, category: 'Probability & Statistics', prereqs: [] },
-  { name: 'Statistics',                             tier: 0, category: 'Probability & Statistics', prereqs: [] },
-  { name: 'Risk analysis',                          tier: 2, category: 'Probability & Statistics', prereqs: ['Probability theory', 'Statistics'] },
-  { name: 'Stochastic processes',                   tier: 2, category: 'Probability & Statistics', prereqs: ['Probability theory', 'Real analysis'] },
+  { name: 'Basics of Probability',                  tier: 0, category: 'Probability & Statistics', prereqs: [] },
+  { name: 'Advanced Probability Theory',            tier: 1, category: 'Probability & Statistics', prereqs: ['Basics of Probability', 'Real analysis'] },
+  { name: 'Basics of Statistics',                   tier: 0, category: 'Probability & Statistics', prereqs: [] },
+  { name: 'Statistical Inference',                  tier: 1, category: 'Probability & Statistics', prereqs: ['Basics of Statistics', 'Basics of Probability'] },
+  { name: 'Risk analysis',                          tier: 2, category: 'Probability & Statistics', prereqs: ['Basics of Probability', 'Statistics'] },
+  { name: 'Stochastic processes',                   tier: 2, category: 'Probability & Statistics', prereqs: ['Basics of Probability', 'Real analysis'] },
   { name: 'Multivariate statistical analysis',      tier: 2, category: 'Probability & Statistics', prereqs: ['Statistics', 'Linear algebra'] },
   { name: 'Time series analysis',                   tier: 2, category: 'Probability & Statistics', prereqs: ['Statistics', 'Stochastic processes'] },
   { name: 'High-dimensional probability',           tier: 3, category: 'Probability & Statistics', prereqs: ['Measure and integral', 'Stochastic processes'] },
@@ -79,7 +81,7 @@ const MATHEMATICS: TopicDef[] = [
   { name: 'Combinatorial optimization',             tier: 3, category: 'Optimization', prereqs: ['Graph theory', 'Linear optimization'] },
   // Stochastic & Computational
   { name: 'Computational inverse problems',         tier: 3, category: 'Stochastic & Computational Methods', prereqs: ['Numerical analysis', 'PDE'] },
-  { name: 'Quantum probability',                    tier: 4, category: 'Stochastic & Computational Methods', prereqs: ['Hilbert spaces', 'Probability theory'] },
+  { name: 'Quantum probability',                    tier: 4, category: 'Stochastic & Computational Methods', prereqs: ['Hilbert spaces', 'Basics of Probability'] },
   // ── Added topics ────────────────────────────────────────────────────────────
   { name: 'Integral equations',                     tier: 2, category: 'Calculus & Analysis', prereqs: ['ODE', 'Real analysis'] },
   { name: 'Control theory',                         tier: 2, category: 'Optimization', prereqs: ['ODE', 'Linear algebra'] },
@@ -246,7 +248,7 @@ const ECONOMICS: TopicDef[] = [
   { name: 'Macroeconomics Policy',                            tier: 2, category: 'Macroeconomics', prereqs: ['Advanced macroeconomics'] },
   { name: 'Economic growth theory',                           tier: 3, category: 'Macroeconomics', prereqs: ['Advanced macroeconomics'] },
   // Quantitative Methods
-  { name: 'Econometrics',                                     tier: 1, category: 'Quantitative Methods', prereqs: ['Basics of microeconomics', 'Statistics from Math'] },
+  { name: 'Econometrics',                                     tier: 1, category: 'Quantitative Methods', prereqs: ['Basics of microeconomics', 'Basics of Statistics from Math'] },
   { name: 'Game Theory',                                      tier: 1, category: 'Quantitative Methods', prereqs: ['Basics of microeconomics'] },
   { name: 'Algorithmic game theory',                          tier: 2, category: 'Quantitative Methods', prereqs: ['Game Theory'] },
   { name: 'Computational economics',                          tier: 3, category: 'Quantitative Methods', prereqs: ['Algorithmic game theory', 'Econometrics'] },

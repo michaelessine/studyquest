@@ -8,23 +8,20 @@ export type MasteryEventType = 'quiz' | 'exam' | 'real_exam' | 'exercise' | 'man
 const SOFT_CAP = 4.0 // max reachable from quizzes/exercises/teach/debate alone
 
 // ── Delta tables ────────────────────────────────────────────────────────────
-// Tuned down ~50% so mastery is earned more slowly (stays on a 0.25 grid).
+// Slow progression: only high performance yields gains; 70% no longer enough.
 export function quizDelta(score: number): number {
-  if (score >= 90) return 0.5
+  if (score >= 90) return 0.25
   if (score >= 80) return 0.25
-  if (score >= 70) return 0.25
   return 0
 }
 export function exerciseDelta(pctSolved: number): number {
   if (pctSolved >= 100) return 0.5
-  if (pctSolved >= 90)  return 0.5
-  if (pctSolved >= 80)  return 0.25
+  if (pctSolved >= 90)  return 0.25
   return 0
 }
 export function teachDebateDelta(score: number): number {
-  if (score >= 90) return 0.5
-  if (score >= 80) return 0.5
-  if (score >= 70) return 0.25
+  if (score >= 90) return 0.25
+  if (score >= 80) return 0.25
   return 0
 }
 

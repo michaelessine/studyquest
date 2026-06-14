@@ -68,7 +68,13 @@ const ABILITIES: AbilityDef[] = [
 
 type Book = { title: string; author?: string; progress: number; notes?: string }
 type Habit = { name: string; streak: number }
-type Goals = { books: Book[]; disciplineHabits: Habit[]; healthHabits: string[]; spiritualGrowth: string[] }
+type Goals = { books: Book[]; disciplineHabits: Habit[]; healthHabits: Habit[]; spiritualGrowth: Habit[] }
+
+function toHabits(raw: unknown[]): Habit[] {
+  return raw.map(item =>
+    typeof item === 'string' ? { name: item, streak: 0 } : item as Habit
+  )
+}
 
 // Info-only card (no self-rating)
 function AbilityCard({ def }: { def: AbilityDef }) {
@@ -120,10 +126,20 @@ export default function LearningAbilityPage() {
   const [newHealth, setNewHealth] = useState('')
   const [newPersonal, setNewPersonal] = useState('')
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function parseGoals(g: any): Goals {
+    return {
+      books: g.books ?? [],
+      disciplineHabits: toHabits(g.disciplineHabits ?? []),
+      healthHabits: toHabits(g.healthHabits ?? []),
+      spiritualGrowth: toHabits(g.spiritualGrowth ?? []),
+    }
+  }
+
   useEffect(() => {
     fetch('/api/self-improvement').then(r => r.json())
       .then(g => {
-        if (g.goals) setGoals({ books: g.goals.books ?? [], disciplineHabits: g.goals.disciplineHabits ?? [], healthHabits: g.goals.healthHabits ?? [], spiritualGrowth: g.goals.spiritualGrowth ?? [] })
+        if (g.goals) setGoals(parseGoals(g.goals))
         setLoading(false)
       }).catch(() => setLoading(false))
   }, [])
@@ -212,29 +228,53 @@ export default function LearningAbilityPage() {
           </div>
         </div>
 
-        {/* Health & Personal — simple lists */}
-        {([
-          { title: 'Health Habits', icon: <Apple size={15} className="text-green-400" />, items: goals.healthHabits, val: newHealth, setVal: setNewHealth, key: 'healthHabits' as const, placeholder: 'e.g. 5 servings of vegetables daily' },
-          { title: 'Personal Growth', icon: <Dumbbell size={15} className="text-indigo-400" />, items: goals.spiritualGrowth, val: newPersonal, setVal: setNewPersonal, key: 'spiritualGrowth' as const, placeholder: 'e.g. Daily meditation, journaling, a new skill' },
-        ]).map(sec => (
-          <div key={sec.key} className="card p-5">
-            <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2">{sec.icon} {sec.title}</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {sec.items.map((it, i) => (
-                <span key={i} className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-gray-800 border border-gray-700 rounded-full text-gray-300">
-                  {it}
-                  <button onClick={() => saveGoals({ ...goals, [sec.key]: sec.items.filter((_, j) => j !== i) })} className="text-gray-600 hover:text-red-400"><X size={11} /></button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input value={sec.val} onChange={e => sec.setVal(e.target.value)} placeholder={sec.placeholder}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
-              <button onClick={() => { if (!sec.val.trim()) return; saveGoals({ ...goals, [sec.key]: [...sec.items, sec.val] }); sec.setVal('') }}
-                className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
-            </div>
+        {/* Health Habits — with streaks */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2"><Apple size={15} className="text-green-400" /> Health Habits</h3>
+          <div className="space-y-2 mb-3">
+            {goals.healthHabits.map((h, i) => (
+              <div key={i} className="flex items-center justify-between bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2">
+                <span className="text-sm text-gray-200">{h.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-green-400 font-semibold">{h.streak}-day streak 🔥</span>
+                  <button onClick={() => { const hs = [...goals.healthHabits]; hs[i] = { ...h, streak: h.streak + 1 }; saveGoals({ ...goals, healthHabits: hs }) }}
+                    className="text-[10px] px-2 py-0.5 bg-green-900/40 border border-green-800/50 text-green-300 rounded">+1 day</button>
+                  <button onClick={() => saveGoals({ ...goals, healthHabits: goals.healthHabits.filter((_, j) => j !== i) })} className="text-gray-600 hover:text-red-400"><X size={13} /></button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+          <div className="flex gap-2">
+            <input value={newHealth} onChange={e => setNewHealth(e.target.value)} placeholder="e.g. 5 servings of vegetables daily"
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
+            <button onClick={() => { if (!newHealth.trim()) return; saveGoals({ ...goals, healthHabits: [...goals.healthHabits, { name: newHealth, streak: 0 }] }); setNewHealth('') }}
+              className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
+          </div>
+        </div>
+
+        {/* Personal Growth — with streaks */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2"><Dumbbell size={15} className="text-indigo-400" /> Personal Growth</h3>
+          <div className="space-y-2 mb-3">
+            {goals.spiritualGrowth.map((h, i) => (
+              <div key={i} className="flex items-center justify-between bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2">
+                <span className="text-sm text-gray-200">{h.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-indigo-400 font-semibold">{h.streak}-day streak 🔥</span>
+                  <button onClick={() => { const hs = [...goals.spiritualGrowth]; hs[i] = { ...h, streak: h.streak + 1 }; saveGoals({ ...goals, spiritualGrowth: hs }) }}
+                    className="text-[10px] px-2 py-0.5 bg-indigo-900/40 border border-indigo-800/50 text-indigo-300 rounded">+1 day</button>
+                  <button onClick={() => saveGoals({ ...goals, spiritualGrowth: goals.spiritualGrowth.filter((_, j) => j !== i) })} className="text-gray-600 hover:text-red-400"><X size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input value={newPersonal} onChange={e => setNewPersonal(e.target.value)} placeholder="e.g. Daily meditation, journaling, a new skill"
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-600" />
+            <button onClick={() => { if (!newPersonal.trim()) return; saveGoals({ ...goals, spiritualGrowth: [...goals.spiritualGrowth, { name: newPersonal, streak: 0 }] }); setNewPersonal('') }}
+              className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-xs rounded-lg"><Plus size={13} /></button>
+          </div>
+        </div>
       </section>
     </div>
   )

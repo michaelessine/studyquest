@@ -4,7 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts'
-import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy, Workflow, Zap } from 'lucide-react'
+import { Loader2, Clock, Target, TrendingUp, TrendingDown, Flame, CalendarCheck, Hourglass, Star, Trophy, Workflow, Zap, Pencil, Check } from 'lucide-react'
 import { PHASES } from '@/lib/workflow'
 
 type PhaseResult = { phase: number; withCount: number; withAvgVelocity: number; withoutCount: number; withoutAvgVelocity: number; ratio: number }
@@ -39,6 +39,17 @@ function Stat({ icon, label, value, sub, accent = 'text-gray-200' }: { icon: Rea
 export default function AnalyticsOverview() {
   const [data, setData] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editingGoal, setEditingGoal] = useState(false)
+  const [goalInput, setGoalInput] = useState('')
+  const [savingGoal, setSavingGoal] = useState(false)
+
+  async function saveGoal() {
+    const h = Math.max(1, parseInt(goalInput) || 100)
+    setSavingGoal(true)
+    await fetch('/api/analytics/goal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hours: h }) })
+    setData(d => d ? { ...d, semesterGoalHours: h } : d)
+    setEditingGoal(false); setSavingGoal(false)
+  }
 
   useEffect(() => {
     fetch('/api/analytics/summary')
@@ -67,7 +78,23 @@ export default function AnalyticsOverview() {
         </div>
         <div className="card p-5">
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Target size={13} /> Semester goal</div>
-          <div className="text-3xl font-black text-gray-200">{data.semesterGoalHours}h</div>
+          {editingGoal ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input type="number" min="1" value={goalInput} onChange={e => setGoalInput(e.target.value)}
+                className="w-20 bg-gray-800 border border-orange-600 rounded-lg px-2 py-1 text-sm text-gray-200 focus:outline-none"
+                autoFocus onKeyDown={e => { if (e.key === 'Enter') saveGoal(); if (e.key === 'Escape') setEditingGoal(false) }} />
+              <span className="text-sm text-gray-500">h</span>
+              <button onClick={saveGoal} disabled={savingGoal} className="p-1 text-orange-400 hover:text-orange-300">
+                {savingGoal ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="text-3xl font-black text-gray-200">{data.semesterGoalHours}h</div>
+              <button onClick={() => { setGoalInput(String(data.semesterGoalHours)); setEditingGoal(true) }}
+                className="text-gray-600 hover:text-orange-400 transition-colors mt-1"><Pencil size={13} /></button>
+            </div>
+          )}
           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mt-2">
             <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pacePct}%` }} />
           </div>

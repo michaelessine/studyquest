@@ -1,4 +1,6 @@
 import prisma from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import { differenceInDays, format } from 'date-fns'
 import { Clock, BookOpen, ChevronRight, CheckCircle2, Calendar, List, AlertCircle, GraduationCap, Route, Workflow } from 'lucide-react'

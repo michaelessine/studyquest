@@ -309,8 +309,9 @@ model RateLimitLog {
 
 // Fix 9: app-level settings (monthly spend cap, etc.)
 model AppSetting {
-  id              String @id @default("singleton")
-  monthlyCapUsd   Float  @default(5)
+  id                String @id @default("singleton")
+  monthlyCapUsd     Float  @default(5)
+  semesterGoalHours Int    @default(100)
 }
 
 // ─── PART 1: real exam / exercise / mastery tracking + personal growth ────────

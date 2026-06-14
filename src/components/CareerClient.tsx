@@ -5,7 +5,7 @@ import { Briefcase, ChevronDown, Check, Target, Sparkles, TrendingUp, Plus, Load
 import { SUBJECT_LABEL, Subject } from '@/lib/xp'
 
 type CareerProgress = {
-  id: string; label: string
+  id: string; label: string; roles: string[]
   matched: { id: string; name: string; subject: string; masteryLevel: number; status: string }[]
   masteredTopics: { id: string; name: string; subject: string }[]
   recommendedNext: { id: string; name: string; subject: string; masteryLevel: number }[]
@@ -130,6 +130,15 @@ export default function CareerClient({ progress, initialSelected }: { progress: 
                 <Ring pct={p.readiness} label="Readiness" color={p.readiness >= 80 ? '#16a34a' : p.readiness >= 50 ? '#ea580c' : '#eab308'} />
               </div>
             </div>
+
+            {/* Example roles */}
+            {p.roles?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {p.roles.map(r => (
+                  <span key={r} className="text-[11px] px-2.5 py-1 rounded-full bg-orange-950/40 border border-orange-800/40 text-orange-300">{r}</span>
+                ))}
+              </div>
+            )}
 
             {/* Gap analysis */}
             <div className="mt-3 text-sm text-gray-400 bg-gray-800/40 border border-gray-700/40 rounded-lg px-3 py-2 flex items-start gap-2">

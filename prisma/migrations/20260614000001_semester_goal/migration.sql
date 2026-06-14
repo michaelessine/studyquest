@@ -1,0 +1,1 @@
+ALTER TABLE "AppSetting" ADD COLUMN "semesterGoalHours" INTEGER NOT NULL DEFAULT 100;

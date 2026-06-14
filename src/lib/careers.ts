@@ -5,84 +5,104 @@ export interface Career {
   id: string
   label: string
   topics: string[]
+  roles: string[]
 }
 
 export const CAREERS: Career[] = [
   {
     id: 'data-science', label: 'Data Science & Machine Learning',
-    topics: ['Supervised Machine Learning', 'Unsupervised learning', 'Deep Learning', 'Statistics', 'Multivariate statistical analysis', 'Linear algebra', 'Probability theory', 'Python', 'SQL', 'Pandas', 'NumPy', 'TensorFlow', 'scikit-learn', 'Bayesian Data Analysis', 'Data Mining', 'Large Scale Data Analysis', 'Probabilistic Machine Learning'],
+    roles: ['Data Scientist', 'ML Engineer', 'Research Scientist'],
+    topics: ['Supervised Machine Learning', 'Unsupervised learning', 'Deep Learning', 'Basics of Statistics', 'Multivariate statistical analysis', 'Linear algebra', 'Basics of Probability', 'Python', 'SQL', 'Pandas', 'NumPy', 'TensorFlow', 'scikit-learn', 'Bayesian Data Analysis', 'Data Mining', 'Large Scale Data Analysis', 'Probabilistic Machine Learning'],
   },
   {
     id: 'ai-dl', label: 'Artificial Intelligence & Deep Learning',
+    roles: ['AI Researcher', 'Deep Learning Engineer', 'NLP Engineer'],
     topics: ['Deep Learning', 'Supervised Machine Learning', 'Reinforcement Learning', 'Computer Vision', 'Deep Generative Models', 'Generative models', 'LLMs', 'AI agents', 'Multiagent learning', 'Graph neural networks', 'Quantum Machine Learning', 'PyTorch', 'TensorFlow', 'Linear algebra'],
   },
   {
     id: 'banking-consulting', label: 'Banking & Financial Consulting',
-    topics: ['Microeconomics', 'Macroeconomics', 'Basics of microeconomics', 'Basics of macroeconomics', 'Game Theory', 'Game theory', 'Financial Markets', 'Risk management', 'Fundamentals of Financial Risk Management', 'Econometrics', 'Advanced strategic Management', 'Strategic Management basics', 'Statistics'],
+    roles: ['Investment Banking Analyst', 'Management Consultant', 'Financial Advisor'],
+    topics: ['Microeconomics', 'Macroeconomics', 'Basics of microeconomics', 'Basics of macroeconomics', 'Game Theory', 'Game theory', 'Financial Markets', 'Risk management', 'Fundamentals of Financial Risk Management', 'Econometrics', 'Advanced strategic Management', 'Strategic Management basics', 'Basics of Statistics'],
   },
   {
     id: 'finance', label: 'Finance & Trading',
+    roles: ['Portfolio Manager', 'Quantitative Trader', 'Derivatives Analyst'],
     topics: ['Fundamentals of Investments', 'Fundamentals of Corporate Finance', 'Advanced Investments', 'Portfolio Management', 'Derivatives and Fixed Income', 'Options Pricing Theory', 'Algorithmic Trading', 'High-Frequency Trading', 'Systematic Investment Strategies', 'Quantitative Risk Management', 'Machine Learning in Financial Risk Management', 'Stochastic processes', 'Linear optimization', 'Theoretical Asset Pricing', 'Financial Markets'],
   },
   {
     id: 'product', label: 'Product Management',
+    roles: ['Product Manager', 'Product Lead', 'Head of Product'],
     topics: ['Product management basics', 'Advanced product Management', 'Product Leadership and Operating Models', 'Business metrics and KPIs', 'Funnel analysis and conversion optimization', 'A/B testing design and analysis', 'Storytelling with data', 'Data-driven decision making', 'Customer development methodology', 'Market research and validation'],
   },
   {
     id: 'software-eng', label: 'Software Engineering & Development',
+    roles: ['Software Engineer', 'Full-Stack Developer', 'Backend Engineer'],
     topics: ['Basics of programming', 'Data structures and algorithms', 'Principles of Algorithmic Techniques', 'Advanced algorithms', 'Theory of computation', 'Software Engineering', 'Software Design and Modelling', 'Software testing', 'Testing', 'Databases', 'Computer networks', 'Operating systems', 'Web Software Development', 'FullStack', 'Git Control'],
   },
   {
     id: 'engineering', label: 'Engineering (Systems / Electrical / Mechanical)',
+    roles: ['Systems Engineer', 'Control Systems Engineer', 'R&D Engineer'],
     topics: ['Control theory', 'ODE', 'PDE', 'Linear algebra', 'Numerical analysis', 'Differential equations', 'Thermodynamics', 'Kinetic theory of gases', 'Optimization', 'Linear optimization', 'Mathematical modelling', 'Operations research'],
   },
   {
     id: 'cybersecurity', label: 'Cybersecurity & Information Security',
+    roles: ['Security Engineer', 'Penetration Tester', 'Security Analyst'],
     topics: ['Cybersecurity', 'Information Security', 'Security Engineering', 'Cryptography', 'Applied cryptography', 'Hacking (offensive security)', 'Computer networks', 'Operating systems', 'Fundamentals of Financial Risk Management'],
   },
   {
     id: 'quantum', label: 'Quantum Computing & Algorithms',
+    roles: ['Quantum Software Engineer', 'Quantum Algorithms Researcher', 'Quantum Hardware Engineer'],
     topics: ['Quantum mechanics basics', 'Advanced quantum mechanics', 'Quantum Information', 'Quantum Circuits', 'Quantum Computing', 'Quantum error correction', 'Programming quantum computers', 'Quantum complexity theory', 'Quantum Machine Learning', 'Linear algebra'],
   },
   {
     id: 'cloud', label: 'Cloud Architecture',
+    roles: ['Cloud Architect', 'Solutions Architect', 'Site Reliability Engineer'],
     topics: ['Cloud Software and Systems', 'Scalable Systems and Data Management', 'Databases', 'PostgreSQL', 'MySQL', 'BigQuery', 'Computer networks', 'AWS', 'Azure', 'Google Cloud', 'Docker', 'Kubernetes', 'CI/CD', 'Distributed Machine learning'],
   },
   {
     id: 'devops', label: 'DevOps & Infrastructure',
+    roles: ['DevOps Engineer', 'Platform Engineer', 'Infrastructure Engineer'],
     topics: ['CI/CD', 'Docker', 'Kubernetes', 'Linux', 'Bash/PowerShell', 'Cloud Software and Systems', 'AWS', 'Azure', 'Google Cloud', 'Computer networks', 'Operating systems', 'Software testing'],
   },
   {
     id: 'entrepreneurship', label: 'Startup / Entrepreneurship',
+    roles: ['Founder / CEO', 'Startup Operator', 'Venture Builder'],
     topics: ['Startup fundamentals', 'Business model canvas and lean startup', 'Product-market fit', 'Customer development methodology', 'Growth hacking strategies', 'Fundraising (angel, VC, crowdfunding)', 'Pitch deck design and investor relations', 'Scaling and operations', 'Team building and hiring', 'Fundamentals of Corporate Finance', 'Personal Finance'],
   },
   {
     id: 'business-strategy', label: 'Business Strategy & Consulting',
+    roles: ['Strategy Consultant', 'Corporate Strategist', 'Business Analyst'],
     topics: ['Strategic Management basics', 'Advanced strategic Management', 'Strategy Process', 'Designing Adaptive and Creative Organisations', 'Game Theory', 'Microeconomics', 'Industrial organization', 'Competition and Market Strategy', 'Risk analysis', 'Decision analysis', 'Economics of Strategy'],
   },
   {
     id: 'operations', label: 'Operations Management',
+    roles: ['Operations Manager', 'Supply Chain Analyst', 'Process Improvement Manager'],
     topics: ['Operations management basics', 'Advanced Operations Management', 'Innovation in Operations', 'Operating Models', 'Operations research', 'Linear optimization', 'Nonlinear optimization', 'Decision analysis', 'Business metrics and KPIs'],
   },
   // ── Additional careers ──────────────────────────────────────────────────────
   {
     id: 'data-engineering', label: 'Data Engineering & Platforms',
+    roles: ['Data Engineer', 'Analytics Engineer', 'Data Platform Engineer'],
     topics: ['Databases', 'SQL', 'PostgreSQL', 'MySQL', 'BigQuery', 'ETL/ELT', 'Fabric', 'Principles and Techniques of Data Platforms', 'Scalable Systems and Data Management', 'Large Scale Data Analysis', 'Python', 'Cloud Software and Systems', 'Qlik Sense'],
   },
   {
     id: 'quant-research', label: 'Quantitative Research',
-    topics: ['Stochastic processes', 'Brownian motion and stochastic analysis', 'Probability theory', 'Statistics', 'Time series analysis', 'Options Pricing Theory', 'Linear algebra', 'Numerical analysis', 'Mathematical finance theory', 'Control theory', 'High-dimensional probability'],
+    roles: ['Quantitative Researcher', 'Quant Analyst', 'Strats (Goldman / Morgan Stanley)'],
+    topics: ['Stochastic processes', 'Brownian motion and stochastic analysis', 'Basics of Probability', 'Basics of Statistics', 'Time series analysis', 'Options Pricing Theory', 'Linear algebra', 'Numerical analysis', 'Mathematical finance theory', 'Control theory', 'High-dimensional probability'],
   },
   {
     id: 'research-academia', label: 'Research & Academia (Math/Physics)',
+    roles: ['PhD Researcher', 'Postdoctoral Fellow', 'University Lecturer'],
     topics: ['Real analysis', 'Functional analysis', 'Measure and integral', 'Abstract algebra', 'Galois theory', 'Algebraic topology', 'Differential geometry', 'Category theory', 'Quantum field theory', 'General relativity', 'Mean field theory'],
   },
   {
     id: 'biz-analytics', label: 'Business Analytics',
+    roles: ['Business Analyst', 'Analytics Manager', 'Insights Analyst'],
     topics: ['Descriptive analytics (data summarization)', 'Exploratory data analysis (EDA)', 'Business metrics and KPIs', 'Cohort analysis and retention curves', 'Customer lifetime value (CLV) modeling', 'Funnel analysis and conversion optimization', 'Attribution modeling (multi-touch)', 'A/B testing design and analysis', 'Dashboarding and visualization for business', 'Storytelling with data', 'Python for analytics', 'Market sizing and forecasting'],
   },
   {
     id: 'ml-ops', label: 'Machine Learning Engineering / MLOps',
+    roles: ['ML Engineer', 'MLOps Engineer', 'AI Infrastructure Engineer'],
     topics: ['Supervised Machine Learning', 'Deep Learning', 'Distributed Machine learning', 'Federated Learning', 'Python', 'PyTorch', 'TensorFlow', 'Docker', 'Kubernetes', 'Cloud Software and Systems', 'CI/CD', 'Large Scale Data Analysis'],
   },
 ]
@@ -94,6 +114,7 @@ export type SlimNode = { id: string; name: string; subject: string; masteryLevel
 export interface CareerProgress {
   id: string
   label: string
+  roles: string[]
   matched: { id: string; name: string; subject: string; masteryLevel: number; status: string }[]
   masteredTopics: { id: string; name: string; subject: string }[]
   recommendedNext: { id: string; name: string; subject: string; masteryLevel: number }[]
@@ -146,7 +167,7 @@ export function computeCareerProgress(career: Career, nodes: SlimNode[]): Career
   else gapText = `Keep advancing your current topics toward mastery to reach 80% readiness.`
 
   return {
-    id: career.id, label: career.label,
+    id: career.id, label: career.label, roles: career.roles,
     matched: matched.map(n => ({ id: n.id, name: n.name, subject: n.subject, masteryLevel: n.masteryLevel, status: n.status })),
     masteredTopics: mastered.map(n => ({ id: n.id, name: n.name, subject: n.subject })),
     recommendedNext, allTopics,

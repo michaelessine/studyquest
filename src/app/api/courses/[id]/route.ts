@@ -16,6 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (typeof body.status === 'string') data.status = body.status
   if (typeof body.name === 'string' && body.name.trim()) data.name = body.name.trim()
+  if (typeof body.subject === 'string' && body.subject.trim()) data.subject = body.subject.trim()
   if (body.grade !== undefined) data.grade = body.grade === null || body.grade === '' ? null : parseFloat(body.grade)
 
   if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

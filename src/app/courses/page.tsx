@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { SUBJECTS, SUBJECT_LABEL } from '@/lib/xp'
 import AddCourseModal from '@/components/AddCourseModal'
 import DeleteCourseButton from '@/components/DeleteCourseButton'
+import MoveCourseButton from '@/components/MoveCourseButton'
 import Link from 'next/link'
 import { BookOpen, ChevronRight } from 'lucide-react'
 
@@ -85,6 +86,7 @@ export default async function CoursesPage() {
                 return (
                   <div key={course.id} className="relative">
                   <DeleteCourseButton id={course.id} name={course.name} />
+                  <MoveCourseButton id={course.id} currentSubject={course.subject} />
                   <Link href={`/courses/${course.id}`} className="card p-4 hover:border-gray-700 transition-colors block">
                     {/* Course header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
